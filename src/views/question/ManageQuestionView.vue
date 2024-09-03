@@ -42,7 +42,7 @@ const doUpdate = (question: Question) => {
   });
 };
 const doDelete = async (question: Question) => {
-  const res = await QuestionControllerService.deleteQuestionUsingPost({
+  const res = await QuestionControllerService.deleteQuestionUsingPost1({
     id: question.id,
   });
   if (res.code === 0) {
@@ -53,7 +53,7 @@ const doDelete = async (question: Question) => {
   }
 };
 const loadData = async () => {
-  const res = await QuestionControllerService.listQuestionByPageUsingPost(
+  const res = await QuestionControllerService.listQuestionByPageUsingPost1(
     searchParams.value
   );
   if (res.code === 0) {

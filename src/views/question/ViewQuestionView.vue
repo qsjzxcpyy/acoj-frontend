@@ -4,23 +4,23 @@
       <a-col :md="12" :xs="24">
         <a-tabs default-active-key="question">
           <a-tab-pane key="question" title="题目">
-            <a-card v-if="question" :title="question.title">
+            <a-card v-if="question1" :title="question1.title">
               <a-descriptions
                 title="题目限制"
                 :column="{ xs: 1, md: 2, lg: 3 }"
               >
                 <a-descriptions-item label="时间限制">
-                  {{ question.judgeConfig.timeLimit ?? 0 }}ms
+                  {{ question1.judgeConfig.timeLimit ?? 0 }}ms
                 </a-descriptions-item>
                 <a-descriptions-item label="空间限制限制">
-                  {{ question.judgeConfig.memoryLimit ?? 0 }}KB
+                  {{ question1.judgeConfig.memoryLimit ?? 0 }}KB
                 </a-descriptions-item>
               </a-descriptions>
-              <MdViewer :value="question.content || ''" />
+              <MdViewer :value="question1.content || ''" />
               <template #extra>
                 <a-space wrap>
                   <a-tag
-                    v-for="(tag, index) of question.tags"
+                    v-for="(tag, index) of question1.tags"
                     :key="index"
                     color="green"
                     >{{ tag }}
@@ -30,8 +30,8 @@
             </a-card>
           </a-tab-pane>
           <a-tab-pane key="comment" title="评论" disabled> //todo</a-tab-pane>
-          <a-tab-pane key="answer" title="答案" v-if="question">
-            <MdViewer :value="question.answer || ''" />
+          <a-tab-pane key="answer" title="答案" v-if="question1">
+            <MdViewer :value="question1.answer || ''" />
           </a-tab-pane>
         </a-tabs>
       </a-col>
@@ -69,6 +69,9 @@ import message from "@arco-design/web-vue/es/message";
 import { onMounted, ref, withDefaults, defineProps } from "vue";
 import CodeEditor from "@/components/CodeEditor.vue";
 import MdViewer from "@/components/MdViewer.vue";
+import store from "@/store";
+import { useStore } from "vuex";
+import { getResponseHeader } from "../../../generated/core/request";
 
 interface Props {
   id: string;
@@ -80,35 +83,43 @@ const props = withDefaults(defineProps<Props>(), {
 const doCodeChange = (v: string) => {
   form.value.code = v;
 };
-const question = ref<QuestionVO>();
+const question1 = ref<QuestionVO>();
 const form = ref<QuestionSubmitAddRequest>({
   code: "",
   questionId: props.id as any,
   language: "java",
 });
+const useStore1 = useStore();
 const doSubmit = async () => {
   if (!form.value.questionId) return;
-  const res = await QuestionControllerService.doQuestionSubmitUsingPost(
+  const res = await QuestionControllerService.doQuestionSubmitUsingPost1(
     form.value
   );
   if (res.code === 0) {
     message.success("提交成功");
+    const token = res.data.refreshToken;
+    if (token != null && token != "")
+      useStore1.commit("question/updateToken", token);
   } else {
     message.error("提交失败," + res.message);
   }
 };
 const loadData = async () => {
-  const res = await QuestionControllerService.getQuestionVoByIdUsingGet(
+  const res = await QuestionControllerService.getQuestionVoByIdUsingGet1(
     props.id as any
   );
   if (res.code === 0) {
-    question.value = res.data;
+    question1.value = res.data;
   } else {
     message.error("加载数据失败," + res.message);
   }
 };
+const getTokenAndsetToken = async () => {
+  await useStore1.dispatch("question/getRequestToken");
+};
 onMounted(() => {
   loadData();
+  getTokenAndsetToken();
 });
 </script>
 

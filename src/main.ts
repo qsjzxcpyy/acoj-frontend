@@ -7,5 +7,10 @@ import "@arco-design/web-vue/dist/arco.css";
 import "@/plugins/axios";
 import "@/access";
 import "bytemd/dist/index.css";
-
-createApp(App).use(ArcoVue).use(store).use(router).mount("#app");
+import ElementPlus from "element-plus";
+createApp(App)
+  .use(ArcoVue)
+  .use(store)
+  .use(router)
+  .use(ElementPlus)
+  .mount("#app");

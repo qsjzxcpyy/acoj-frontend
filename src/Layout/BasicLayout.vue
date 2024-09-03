@@ -7,7 +7,11 @@
       <a-layout-content class="content">
         <router-view />
       </a-layout-content>
-      <a-layout-footer class="footer">Fun coding</a-layout-footer>
+      <a-layout-footer class="footer">
+        <a href="https://beian.miit.gov.cn/" target="_blank">
+          冀ICP备2024075438号-1
+        </a>
+      </a-layout-footer>
     </a-layout>
   </div>
 </template>

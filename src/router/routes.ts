@@ -11,6 +11,8 @@ import ManageQuestionView from "@/views/question/ManageQuestionView.vue";
 import QuestionsView from "@/views/question/QuestionsView.vue";
 import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import QuestionSubmitView from "@/views/question/QuestionSubmitView.vue";
+import UserLogoutView from "@/views/user/UserLogoutView.vue";
+import AiView from "@/views/question/AiView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -31,6 +33,11 @@ export const routes: Array<RouteRecordRaw> = [
         name: "用户注册",
         component: UserRegisterView,
       },
+      {
+        path: "/user/logout",
+        name: "用户退出",
+        component: UserLogoutView,
+      },
     ],
   },
   {
@@ -42,6 +49,11 @@ export const routes: Array<RouteRecordRaw> = [
     path: "/question/submitted",
     name: "浏览题目提交",
     component: QuestionSubmitView,
+  },
+  {
+    path: "/question/ai/ask",
+    name: "AI助手",
+    component: AiView,
   },
   {
     path: "/view/question/:id",
@@ -58,6 +70,7 @@ export const routes: Array<RouteRecordRaw> = [
     name: "创建题目",
     component: AddQuestionView,
     meta: {
+      keepAlive: true,
       access: ACCESS_ENUM.ADMIN,
     },
   },

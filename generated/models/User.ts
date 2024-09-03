@@ -11,6 +11,7 @@ export type User = {
     updateTime?: string;
     userAccount?: string;
     userAvatar?: string;
+    userMailbox?: string;
     userName?: string;
     userPassword?: string;
     userProfile?: string;

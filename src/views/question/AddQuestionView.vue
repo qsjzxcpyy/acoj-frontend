@@ -1,6 +1,6 @@
 <template>
   <div id="addQuestionView">
-    <h2>创建题目</h2>
+    <h2>{{ updatePage ? "更新题目" : "创建题目" }}</h2>
     <a-form :model="form" label-align="left">
       <a-form-item field="title" label="题目标题">
         <a-input v-model="form.title" placeholder="请输入标题" />
@@ -82,8 +82,8 @@
         </a-form-item>
 
         <div style="margin-top: 20px">
-          <a-button @click="handleAddCaseItem" type="outline" status="success"
-            >新增测试用例
+          <a-button @click="handleAddCaseItem" type="outline" status="success">
+            新增测试用例
           </a-button>
         </div>
       </a-form-item>
@@ -93,8 +93,8 @@
       </a-form-item>
       <div style="margin-top: 16px">
         <a-form-item>
-          <a-button type="primary" style="min-width: 200px" @click="doSubmit"
-            >提交
+          <a-button type="primary" style="min-width: 200px" @click="doSubmit">
+            提交
           </a-button>
         </a-form-item>
       </div>
@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import MdEditor from "@/components/MdEditor.vue";
 import {
   QuestionAddRequest,
@@ -112,46 +112,9 @@ import {
 import message from "@arco-design/web-vue/es/message";
 import { useRoute } from "vue-router";
 
-const handleAddCaseItem = () => {
-  form.value.judgeCase.push({
-    input: "",
-    output: "",
-  });
-};
-const handleDeleteCaseItem = (index: number) => {
-  form.value.judgeCase.splice(index, 1);
-};
-
 const route = useRoute();
-const updatePage = route.path.includes("update");
-const doSubmit = async () => {
-  if (updatePage) {
-    const res = await QuestionControllerService.updateQuestionUsingPost(
-      form.value
-    );
-    if (res.code === 0) {
-      message.success("更新成功");
-    } else {
-      message.error("更新失败," + res.message);
-    }
-  } else {
-    const res = await QuestionControllerService.addQuestionUsingPost(
-      form.value
-    );
-    if (res.code === 0) {
-      message.success("创建成功");
-    } else {
-      message.error("创建失败" + res.message);
-    }
-  }
-};
-const onAnswerChange = (v: string) => {
-  form.value.answer = v;
-};
-const onContentChange = (v: string) => {
-  form.value.content = v;
-};
-let form = ref({
+
+const form = ref({
   title: "",
   content: "",
   judgeConfig: {
@@ -169,47 +132,116 @@ let form = ref({
   answer: "",
 } as QuestionAddRequest);
 
-const loadData = async () => {
-  const id = route.query.id;
-  if (!id) return;
-  const res = await QuestionControllerService.getQuestionByIdUsingGet(
-    id as any
-  );
-  if (res.code === 0) {
-    form.value = res.data as any;
-    if (!form.value.judgeCase) {
-      form.value.judgeCase = [
-        {
-          input: "",
-          output: "",
-        },
-      ];
+const updatePage = computed(() => route.path.includes("update"));
+
+const doSubmit = async () => {
+  if (updatePage.value) {
+    const res = await QuestionControllerService.updateQuestionUsingPost1(
+      form.value
+    );
+    if (res.code === 0) {
+      message.success("更新成功");
     } else {
-      form.value.judgeCase = JSON.parse(form.value.judgeCase as any);
-    }
-    if (!form.value.judgeConfig) {
-      form.value.judgeConfig = {
-        memoryLimit: 1000,
-        stackLimit: 1000,
-        timeLimit: 1000,
-      };
-    } else {
-      form.value.judgeConfig = JSON.parse(form.value.judgeConfig as any);
-    }
-    if (!form.value.tags) {
-      form.value.tags = [];
-    } else {
-      form.value.tags = JSON.parse(form.value.tags as any);
+      message.error("更新失败," + res.message);
     }
   } else {
-    message.error("加载数据失败," + res.message);
+    const res = await QuestionControllerService.addQuestionUsingPost1(
+      form.value
+    );
+    if (res.code === 0) {
+      message.success("创建成功");
+    } else {
+      message.error("创建失败" + res.message);
+    }
   }
 };
+
+const onAnswerChange = (v: string) => {
+  form.value.answer = v;
+};
+
+const onContentChange = (v: string) => {
+  form.value.content = v;
+};
+
+const handleAddCaseItem = () => {
+  form.value.judgeCase.push({
+    input: "",
+    output: "",
+  });
+};
+
+const handleDeleteCaseItem = (index: number) => {
+  form.value.judgeCase.splice(index, 1);
+};
+
+const resetForm = () => {
+  form.value = {
+    title: "",
+    content: "",
+    judgeConfig: {
+      memoryLimit: 0,
+      stackLimit: 0,
+      timeLimit: 0,
+    },
+    judgeCase: [
+      {
+        input: "",
+        output: "",
+      },
+    ],
+    tags: [],
+    answer: "",
+  } as QuestionAddRequest;
+};
+
+const loadData = async () => {
+  if (updatePage.value) {
+    const id = route.query.id;
+    if (!id) return;
+    const res = await QuestionControllerService.getQuestionByIdUsingGet1(
+      id as any
+    );
+    if (res.code === 0) {
+      form.value = res.data as any;
+      if (!form.value.judgeCase) {
+        form.value.judgeCase = [{ input: "", output: "" }];
+      } else {
+        form.value.judgeCase = JSON.parse(form.value.judgeCase as any);
+      }
+      if (!form.value.judgeConfig) {
+        form.value.judgeConfig = {
+          memoryLimit: 1000,
+          stackLimit: 1000,
+          timeLimit: 1000,
+        };
+      } else {
+        form.value.judgeConfig = JSON.parse(form.value.judgeConfig as any);
+      }
+      if (!form.value.tags) {
+        form.value.tags = [];
+      } else {
+        form.value.tags = JSON.parse(form.value.tags as any);
+      }
+    } else {
+      message.error("加载数据失败," + res.message);
+    }
+  } else {
+    resetForm();
+  }
+};
+
 onMounted(() => {
   loadData();
 });
+
+watch(route, () => {
+  loadData();
+});
 </script>
+
 <style scoped>
 #addQuestionView {
+  /* 样式 */
 }
 </style>

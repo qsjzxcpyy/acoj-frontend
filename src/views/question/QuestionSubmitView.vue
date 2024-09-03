@@ -32,6 +32,12 @@
       }"
       @page-change="onPageChange"
     >
+      <template #questionName="{ record }">
+        {{ record.questionVO.title }}
+      </template>
+      <template #userName="{ record }">
+        {{ record.userVO.userName }}
+      </template>
       <template #judgeInfo="{ record }">
         {{ record.judgeInfo.message }}
       </template>
@@ -54,6 +60,9 @@ import {
 import message from "@arco-design/web-vue/es/message";
 import { useRouter } from "vue-router";
 import moment from "moment";
+import { useStore } from "vuex";
+import question from "@/store/question";
+import store from "@/store";
 
 const dataList = ref([]);
 const total = ref(0);
@@ -67,10 +76,12 @@ const searchParams = ref<QuestionSubmitQueryRequest>({
 });
 
 const router = useRouter();
+
 const loadData = async () => {
-  const res = await QuestionControllerService.listQuestionSubmitByPageUsingPost(
-    searchParams.value
-  );
+  const res =
+    await QuestionControllerService.listQuestionSubmitByPageUsingPost1(
+      searchParams.value
+    );
   if (res.code === 0) {
     dataList.value = res.data.records;
     total.value = res.data.total;
@@ -78,6 +89,7 @@ const loadData = async () => {
     message.error("加载数据失败," + res.message);
   }
 };
+
 const onPageChange = (page: number) => {
   searchParams.value = {
     ...searchParams.value,
@@ -111,8 +123,8 @@ onMounted(() => {
 });
 const columns = [
   {
-    title: "题目id",
-    dataIndex: "questionId",
+    title: "题目名称",
+    slotName: "questionName",
   },
   {
     title: "编程语言",
@@ -128,8 +140,8 @@ const columns = [
     slotName: "timeAndSpace",
   },
   {
-    title: "提交者 id",
-    dataIndex: "userId",
+    title: "提交者",
+    slotName: "userName",
   },
   {
     title: "创建时间",

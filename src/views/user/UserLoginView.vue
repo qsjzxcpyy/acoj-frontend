@@ -50,9 +50,11 @@ const form = reactive({
   userPassword: "",
 }) as UserLoginRequest;
 const handleSubmit = async () => {
-  const res = await UserControllerService.userLoginUsingPost(form);
+  const res = await UserControllerService.userLoginUsingPost1(form);
   if (res.code === 0) {
-    await store.dispatch("user/getLoginUser");
+    localStorage.setItem("accessToken", res.data.accessToken);
+    localStorage.setItem("refreshToken", res.data.refreshToken);
+    store.commit("user/updateUser", res.data.userInfo);
     router.push({
       path: "/",
       replace: true,

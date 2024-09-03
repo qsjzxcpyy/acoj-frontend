@@ -5,6 +5,7 @@
 export type UserRegisterRequest = {
     checkPassword?: string;
     userAccount?: string;
+    userMailbox?: string;
     userPassword?: string;
 };
 

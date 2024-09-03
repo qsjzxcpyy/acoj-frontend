@@ -86,7 +86,7 @@ const rules = {
   ],
 };
 const handleSubmit = async () => {
-  const res = await UserControllerService.userRegisterUsingPost(form);
+  const res = await UserControllerService.userRegisterUsingPost1(form);
   if (res.code === 0) {
     alert("注册成功");
     router.push({

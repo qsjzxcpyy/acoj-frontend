@@ -50,7 +50,7 @@
         {{
           `${
             record.submitNum
-              ? (record.acceptedNum / record.submitNum) * 100
+              ? ((record.acceptedNum / record.submitNum) * 100).toFixed(2)
               : "0"
           } %(${record.acceptedNum} / ${record.submitNum})`
         }}
@@ -68,6 +68,8 @@ import { Question, QuestionControllerService } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
 import { useRouter } from "vue-router";
 import moment from "moment";
+import { useStore } from "vuex";
+import store from "@/store";
 
 const dataList = ref([]);
 const total = ref(0);
@@ -84,7 +86,7 @@ const toQuestionView = (record: Question) => {
   });
 };
 const loadData = async () => {
-  const res = await QuestionControllerService.listQuestionVoByPageUsingPost(
+  const res = await QuestionControllerService.listQuestionVoByPageUsingPost1(
     searchParams.value
   );
   if (res.code === 0) {
@@ -94,6 +96,7 @@ const loadData = async () => {
     message.error("加载数据失败," + res.message);
   }
 };
+
 const onPageChange = (page: number) => {
   searchParams.value = {
     ...searchParams.value,
