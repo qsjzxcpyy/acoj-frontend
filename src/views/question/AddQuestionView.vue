@@ -111,6 +111,7 @@ import {
 } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
 import { useRoute } from "vue-router";
+import store from "@/store";
 
 const route = useRoute();
 
@@ -224,6 +225,14 @@ const loadData = async () => {
         form.value.tags = JSON.parse(form.value.tags as any);
       }
     } else {
+      if (res.code === 40100) {
+        const userInfo = {
+          userName: "未登录",
+          userProfile: "",
+          userMailbox: "",
+        };
+        store.commit("user/updateUser", userInfo);
+      }
       message.error("加载数据失败," + res.message);
     }
   } else {

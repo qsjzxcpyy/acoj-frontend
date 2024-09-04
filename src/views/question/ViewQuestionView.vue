@@ -111,6 +111,14 @@ const loadData = async () => {
   if (res.code === 0) {
     question1.value = res.data;
   } else {
+    if (res.code === 40100) {
+      const userInfo = {
+        userName: "未登录",
+        userProfile: "",
+        userMailbox: "",
+      };
+      store.commit("user/updateUser", userInfo);
+    }
     message.error("加载数据失败," + res.message);
   }
 };

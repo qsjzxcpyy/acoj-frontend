@@ -43,7 +43,7 @@
         />
       </a-form-item>
       <a-form-item>
-        <a-button type="primary" @click="sendMessage" class="custom-input">
+        <a-button type="primary" @click="sendMessage" class="custom-button">
           发送
         </a-button>
       </a-form-item>
@@ -56,6 +56,7 @@ import { ref, onMounted } from "vue";
 import message from "@arco-design/web-vue/es/message";
 import moment from "moment";
 import { QuestionControllerService } from "../../../generated";
+import store from "@/store";
 
 // 存储聊天记录
 const messages = ref<Array<{ sender: string; text: string; time?: string }>>(
@@ -74,7 +75,7 @@ const sendMessage = async () => {
     // 将用户消息加入聊天记录
     const now = moment().format("YYYY-MM-DDTHH:mm:ss");
     messages.value.push({
-      sender: "用户",
+      sender: store.state.user.loginUser.userName,
       text: newMessage.value,
       time: now,
     });
@@ -89,15 +90,9 @@ const sendMessage = async () => {
     isWaitingForAI.value = true;
 
     try {
-      // 调试输出
-      console.log("发送给后端的消息:", request);
-
       // 发送消息给后端
       const response =
         await QuestionControllerService.getChatResponseUsingPost1(request);
-
-      // 调试输出
-      console.log("后端响应:", response);
 
       // 检查响应码
       if (response.code === 0) {
@@ -174,14 +169,24 @@ onMounted(async () => {
 
 <style scoped>
 .custom-input {
-  background-color: #f0f8ff; /* 更改为你想要的背景颜色 */
-  border-radius: 8px; /* 添加圆角效果 */
-  padding: 10px; /* 添加内边距 */
-  height: 40px; /* 确保高度一致 */
+  background-color: #f0f8ff; /* Set the background color for the input field */
+  border-radius: 8px; /* Add rounded corners */
+  padding: 10px; /* Add padding */
+  height: 40px; /* Ensure consistent height */
+}
+
+/* Separate styling for the send button */
+.custom-button {
+  background-color: #1890ff; /* Set the background color for the send button */
+  border-radius: 8px; /* Add rounded corners */
+  padding: 10px 16px; /* Add padding */
+  color: #fff; /* Set the text color */
+  height: 40px; /* Ensure consistent height with the input field */
+  border: none; /* Remove border */
 }
 
 .input-form .a-form-item {
-  margin-bottom: 0; /* 移除表单项之间的间距 */
+  margin-bottom: 0; /* Remove spacing between form items */
 }
 
 #AIChatView {
@@ -207,16 +212,16 @@ onMounted(async () => {
 .message-header {
   display: flex;
   justify-content: space-between;
-  align-items: center; /* 垂直居中对齐内容 */
+  align-items: center; /* Vertically center the content */
 }
 
 .message-time {
-  margin-left: 576px; /* 设置固定的间距 */
+  margin-left: 576px; /* Set a fixed margin */
   font-size: 12px;
   color: #888;
 }
 
-/* 等待 AI 响应的动画 */
+/* Loading indicator for AI response */
 .loading-indicator {
   text-align: center;
   margin-top: 20px;

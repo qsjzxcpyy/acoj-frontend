@@ -60,6 +60,12 @@ const handleSubmit = async () => {
       replace: true,
     });
   } else {
+    const userInfo = {
+      userName: "未登录",
+      userProfile: "",
+      userMailbox: "",
+    };
+    store.commit("user/updateUser", userInfo);
     message.error("登录失败" + res.message);
   }
 };

@@ -27,6 +27,7 @@ import { onMounted, ref, watchEffect } from "vue";
 import { Question, QuestionControllerService } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
 import { useRouter } from "vue-router";
+import store from "@/store";
 
 const dataList = ref([]);
 const total = ref(0);
@@ -60,6 +61,14 @@ const loadData = async () => {
     dataList.value = res.data.records;
     total.value = res.data.total;
   } else {
+    if (res.code === 40100) {
+      const userInfo = {
+        userName: "未登录",
+        userProfile: "",
+        userMailbox: "",
+      };
+      store.commit("user/updateUser", userInfo);
+    }
     message.error("加载数据失败," + res.message);
   }
 };

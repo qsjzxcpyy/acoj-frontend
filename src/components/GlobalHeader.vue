@@ -289,7 +289,15 @@ const doRegister = async () => {
     showRegisterDialog.value = false;
     showLoginDialog.value = true;
   } else {
-    message.error("注册失败" + res.message);
+    if (res.code === 40100) {
+      const userInfo = {
+        userName: "未登录",
+        userProfile: "",
+        userMailbox: "",
+      };
+      store.commit("user/updateUser", userInfo);
+    }
+    message.error("加载数据失败," + res.message);
   }
 };
 const to_loginDialog = () => {
@@ -317,6 +325,14 @@ const doUserLogin = async () => {
     router.go(0);
     updateData();
   } else {
+    showLoginDialog.value = false;
+    const userInfo = {
+      userName: "未登录",
+      userProfile: "",
+      userMailbox: "",
+    };
+    store.commit("user/updateUser", userInfo);
+
     message.error("登录失败" + res.message);
   }
 };
