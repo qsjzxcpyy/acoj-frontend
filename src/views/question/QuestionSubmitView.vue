@@ -42,7 +42,7 @@
         {{ record.judgeInfo.message }}
       </template>
       <template #timeAndSpace="{ record }">
-        {{ record.judgeInfo.time }} ms / {{ 110 || record.judgeInfo.memory }} KB
+        {{ record.judgeInfo.time }} ms / {{ record.judgeInfo.memory ?? 110 }} KB
       </template>
       <template #createTime="{ record }">
         {{ moment(record.createTime).format("YYYY-MM-DD") }}

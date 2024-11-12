@@ -13,6 +13,7 @@ import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import QuestionSubmitView from "@/views/question/QuestionSubmitView.vue";
 import UserLogoutView from "@/views/user/UserLogoutView.vue";
 import AiView from "@/views/question/AiView.vue";
+import AddContentView from "@/views/content/AddContentView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -44,6 +45,9 @@ export const routes: Array<RouteRecordRaw> = [
     path: "/questions",
     name: "浏览题目",
     component: QuestionsView,
+    meta: {
+      hideInMenu: (route: any) => route.query.from === "contest",
+    },
   },
   {
     path: "/question/submitted",
@@ -105,6 +109,45 @@ export const routes: Array<RouteRecordRaw> = [
     component: NoAuthView,
     meta: {
       hideInMeta: true,
+    },
+  },
+  {
+    path: "/contest/add",
+    name: "添加比赛",
+    component: AddContentView,
+    meta: {
+      access: ACCESS_ENUM.ADMIN,
+      hideInMeta: true,
+    },
+  },
+  {
+    path: "/contest/list",
+    name: "比赛列表",
+    component: () => import("@/views/content/ContestListView.vue"),
+  },
+  {
+    path: "/contest/select-questions",
+    name: "选择比赛题目",
+    component: QuestionsView,
+    meta: {
+      hideInMeta: true,
+    },
+  },
+  {
+    path: "/contest/manage",
+    name: "管理比赛",
+    component: () => import("@/views/content/ManageContestView.vue"),
+    meta: {
+      access: ACCESS_ENUM.ADMIN,
+    },
+  },
+  {
+    path: "/contest/detail/:id",
+    name: "比赛详情",
+    component: () => import("@/views/content/ContestDetailView.vue"),
+    props: true,
+    meta: {
+      hideInMenu: true,
     },
   },
 ];

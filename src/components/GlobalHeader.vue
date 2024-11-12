@@ -322,7 +322,8 @@ const doUserLogin = async () => {
     form.userPassword = "";
     showLoginDialog.value = false;
     // 刷新当前路由页面
-    router.go(0);
+    // router.go(0);
+    window.location.reload();
     updateData();
   } else {
     showLoginDialog.value = false;
