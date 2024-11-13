@@ -1,11 +1,3 @@
-/* generated using openapi-typescript-codegen -- do no edit */
-/* istanbul ignore file */
-/* tslint:disable */
-/* eslint-disable */
-import type { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
-import type { BaseResponse_List_AiChatRecordVo_ } from "../models/BaseResponse_List_AiChatRecordVo_";
-import type { BaseResponse_long_ } from "../models/BaseResponse_long_";
-import type { BaseResponse_Page_Question_ } from "../models/BaseResponse_Page_Question_";
 import type { BaseResponse_Page_QuestionSubmitVO_ } from "../models/BaseResponse_Page_QuestionSubmitVO_";
 import type { BaseResponse_Page_QuestionVO_ } from "../models/BaseResponse_Page_QuestionVO_";
 import type { BaseResponse_Question_ } from "../models/BaseResponse_Question_";
@@ -22,6 +14,10 @@ import type { QuestionUpdateRequest } from "../models/QuestionUpdateRequest";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request } from "../core/request";
+import { BaseResponse_long_ } from "../models/BaseResponse_long_";
+import { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
+import { BaseResponse_List_AiChatRecordVo_ } from "../models/BaseResponse_List_AiChatRecordVo_";
+import { BaseResponse_Page_Question_ } from "../models/BaseResponse_Page_Question_";
 
 export class QuestionControllerService {
   /**
@@ -138,7 +134,7 @@ export class QuestionControllerService {
    * @throws ApiError
    */
   public static getChatResponseUsingPost1(
-    question?: string
+    question: string
   ): CancelablePromise<BaseResponse_string_ | any> {
     return __request(OpenAPI, {
       method: "POST",

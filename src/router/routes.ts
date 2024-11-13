@@ -13,7 +13,7 @@ import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import QuestionSubmitView from "@/views/question/QuestionSubmitView.vue";
 import UserLogoutView from "@/views/user/UserLogoutView.vue";
 import AiView from "@/views/question/AiView.vue";
-import AddContentView from "@/views/content/AddContentView.vue";
+import AddContentView from "@/views/content/AddContestView.vue";
 
 export const routes: Array<RouteRecordRaw> = [
   {
@@ -148,6 +148,7 @@ export const routes: Array<RouteRecordRaw> = [
     props: true,
     meta: {
       hideInMenu: true,
+      hideInMeta: true,
     },
   },
 ];

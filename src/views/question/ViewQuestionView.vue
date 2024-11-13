@@ -95,11 +95,16 @@ const doSubmit = async () => {
   const res = await QuestionControllerService.doQuestionSubmitUsingPost1(
     form.value
   );
+  console.log(res);
   if (res.code === 0) {
     message.success("提交成功");
     const token = res.data.refreshToken;
     if (token != null && token != "")
       useStore1.commit("question/updateToken", token);
+  } else if (res.code === 50030) {
+    // 在其他地方调用
+    store.dispatch("user/getLoginUser");
+    message.success("提交成功");
   } else {
     message.error("提交失败," + res.message);
   }

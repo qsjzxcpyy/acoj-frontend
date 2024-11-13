@@ -101,6 +101,9 @@ const sendMessage = async () => {
           sender: "齐小艾",
           text: response.data ?? "",
         });
+      } else if (response.code === 50030) {
+        // 在其他地方调用
+        store.dispatch("user/getLoginUser");
       } else {
         message.error(response.message ?? "获取 AI 响应失败");
       }
@@ -127,8 +130,13 @@ const formatTime = (time: string) => {
 onMounted(async () => {
   // 从后端加载历史消息的逻辑
   try {
-    const response = await QuestionControllerService.getChatRecordUsingGet1();
-    const historyMessages = response.data;
+    let response = await QuestionControllerService.getChatRecordUsingGet1();
+    let historyMessages = response.data;
+    if (response.code === 50030) {
+      store.dispatch("user/getLoginUser");
+      response = await QuestionControllerService.getChatRecordUsingGet1();
+      historyMessages = response.data;
+    }
 
     if (historyMessages && historyMessages.length > 0) {
       // 将后端数据映射到 messages 所需的格式

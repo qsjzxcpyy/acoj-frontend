@@ -60,6 +60,12 @@ const loadData = async () => {
   if (res.code === 0) {
     dataList.value = res.data.records;
     total.value = res.data.total;
+  } else if (res.code === 50030) {
+    // 在其他地方调用
+    store.dispatch("user/getLoginUser");
+    await QuestionControllerService.listQuestionByPageUsingPost1(
+      searchParams.value
+    );
   } else {
     if (res.code === 40100) {
       const userInfo = {
