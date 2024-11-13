@@ -29,6 +29,7 @@ export type { BaseResponse_UserVO_ } from './models/BaseResponse_UserVO_';
 export type { ContestAddRequest } from './models/ContestAddRequest';
 export type { ContestProblemRequest } from './models/ContestProblemRequest';
 export type { ContestQueryRequest } from './models/ContestQueryRequest';
+export type { ContestQuestionVO } from './models/ContestQuestionVO';
 export type { ContestUpdateRequest } from './models/ContestUpdateRequest';
 export type { ContestVO } from './models/ContestVO';
 export type { DeleteRequest } from './models/DeleteRequest';

@@ -59,7 +59,7 @@
       <!-- 题目列表列 -->
       <template #questions="{ record }">
         <div>
-          <p>共 {{ record.problems?.length || 0 }} 道题目</p>
+          <p>共 {{ record.contestQuestions?.length || 0 }} 道题目</p>
         </div>
       </template>
 

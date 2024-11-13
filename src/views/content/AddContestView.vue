@@ -69,7 +69,6 @@
                 <h4>第 {{ question.order }} 题：{{ question.title }}</h4>
                 <p class="question-id">题目编号：{{ question.id }}</p>
                 <div class="question-content">
-                  <p>分数: {{ question.score }}</p>
                   <p>
                     标签:
                     <a-tag
@@ -114,7 +113,8 @@ import { useRoute, useRouter } from "vue-router";
 import message from "@arco-design/web-vue/es/message";
 import { ContestAddRequest, ContestQuestionVO } from "@/types/contest";
 import moment from "moment";
-import { ContestControllerService } from "../../../generated";
+import { ContestControllerService, ContestVO } from "../../../generated";
+import store from "@/store";
 
 const route = useRoute();
 const router = useRouter();
@@ -153,37 +153,75 @@ const doSubmit = async () => {
       return;
     }
 
-    // 构造提交数据
-    const submitData: ContestAddRequest = {
+    console.log("提交前的formData:", formData.value);
+    console.log(
+      "route.query.id:",
+      route.query.id,
+      "类型:",
+      typeof route.query.id
+    );
+
+    const submitData = {
       ...formData.value,
+      id: updatePage.value ? String(route.query.id) : undefined,
       startTime: moment(formData.value.startTime).format("YYYY-MM-DD HH:mm:ss"),
       endTime: moment(formData.value.endTime).format("YYYY-MM-DD HH:mm:ss"),
       questions: selectedQuestions.value.map((q) => ({
-        id: q.id,
+        id: String(q.id),
         order: q.order,
-        score: q.score,
       })),
     };
 
-    if (updatePage.value) {
-      submitData.id = Number(route.query.id);
-    }
+    console.log("最终提交的数据:", submitData);
+    console.log(
+      "提交数据中的id类型:",
+      typeof submitData.id,
+      "值:",
+      submitData.id
+    );
 
-    const res = await ContestControllerService.addContestUsingPost1(submitData);
-    if (res.code === 0) {
-      message.success(updatePage.value ? "更新成功" : "创建成功");
-      router.push("/contest/manage");
+    if (updatePage.value) {
+      const res = await ContestControllerService.updateContestUsingPost1(
+        submitData
+      );
+      console.log("更新接口返回:", res);
+      if (res.code === 0) {
+        message.success("更新成功");
+        router.push("/contest/manage");
+      } else {
+        message.error(res.message || "更新失败");
+      }
     } else {
-      message.error(res.message || "操作失败");
+      const res = await ContestControllerService.addContestUsingPost1(
+        submitData
+      );
+      console.log("创建接口返回:", res);
+      if (res.code === 0) {
+        message.success("创建成功");
+        router.push("/contest/manage");
+      } else {
+        message.error(res.message || "创建失败");
+      }
     }
   } catch (error) {
+    console.error("提交失败，详细错误:", error);
     message.error("操作失败");
-    console.error("提交失败:", error);
   }
 };
 
 // 跳转到选择题目页面
 const goToSelectQuestions = () => {
+  // 保存当前表单数据到 localStorage
+  localStorage.setItem(
+    "contestFormData",
+    JSON.stringify({
+      title: formData.value.title,
+      description: formData.value.description,
+      startTime: formData.value.startTime,
+      endTime: formData.value.endTime,
+    })
+  );
+
   const query = {
     from: "contest",
     existingQuestions:
@@ -199,32 +237,62 @@ const goToSelectQuestions = () => {
 };
 
 // 加载比赛详情
-const loadContestDetail = async (id: number) => {
+const loadContestDetail = async (id: string) => {
   try {
-    const res = await ContestControllerService.getContestByIdUsingGet1(id);
+    console.log("开始加载比赛详情, 传入的id:", id);
+    let res = await ContestControllerService.getContestByIdUsingGet1(id);
+    console.log("API返回的原始数据:", res);
+    if (res.code === 50030) {
+      // 在其他地方调用
+      store.dispatch("user/getLoginUser");
+      res = await ContestControllerService.getContestByIdUsingGet1(id);
+    }
+
     if (res.code === 0 && res.data) {
       const detail = res.data;
+
       formData.value = {
-        id: detail.id,
-        title: detail.title,
-        description: detail.description,
-        startTime: detail.startTime,
-        endTime: detail.endTime,
+        id: String(detail.id),
+        title: detail.name || "",
+        description: detail.description || "",
+        startTime: detail.startTime || "",
+        endTime: detail.endTime || "",
+        questions: detail.problems || [],
       };
-      if (detail.questions) {
-        selectedQuestions.value = detail.questions;
+
+      if (detail.problems && detail.problems.length > 0) {
+        selectedQuestions.value = detail.problems.map((q) => ({
+          id: String(q.id),
+          title: q.title || "",
+          order: q.problemOrder || 0,
+          tags: q.tags || [],
+        }));
       }
     } else {
       message.error(res.message || "加载比赛详情失败");
     }
   } catch (error) {
+    console.error("加载失败，详细错误:", error);
     message.error("加载比赛详情失败");
-    console.error("加载失败:", error);
   }
 };
 
 // 从路由参数中获取选中的题目
 onMounted(() => {
+  // 如果不是编辑页面，尝试恢复之前保存的表单数据
+  if (!route.query.id) {
+    const savedFormData = localStorage.getItem("contestFormData");
+    if (savedFormData) {
+      const parsedData = JSON.parse(savedFormData);
+      formData.value = {
+        ...formData.value,
+        ...parsedData,
+      };
+      // 清除保存的数据
+      localStorage.removeItem("contestFormData");
+    }
+  }
+
   const selectedQuestionsStr = route.query.selectedQuestions;
   if (selectedQuestionsStr) {
     try {
@@ -241,7 +309,7 @@ onMounted(() => {
 
   // 如果是编辑页面，加载比赛详情
   if (route.query.id) {
-    loadContestDetail(Number(route.query.id));
+    loadContestDetail(route.query.id as string);
   }
 });
 </script>
