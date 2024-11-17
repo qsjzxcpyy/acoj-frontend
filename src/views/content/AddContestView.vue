@@ -61,18 +61,16 @@
             <template #header>
               <div>已选择的题目</div>
             </template>
-            <a-list-item
-              v-for="question in selectedQuestions"
-              :key="question.id"
-            >
+            <a-list-item v-for="item in selectedQuestions" :key="item.id">
               <div class="question-item">
-                <h4>第 {{ question.order }} 题：{{ question.title }}</h4>
-                <p class="question-id">题目编号：{{ question.id }}</p>
+                <h4>第 {{ item.order }} 题：{{ item.title }}</h4>
+                <p class="question-id">题目编号：{{ item.id }}</p>
                 <div class="question-content">
+                  <p>内容: {{ item.content }}</p>
                   <p>
                     标签:
                     <a-tag
-                      v-for="(tag, index) in question.tags"
+                      v-for="(tag, index) in item.tags"
                       :key="index"
                       color="blue"
                     >
@@ -131,7 +129,7 @@ const formData = ref<ContestAddRequest>({
 });
 
 // 选中的题目列表
-const selectedQuestions = ref<ContestQuestionVO[]>([]);
+const selectedQuestions = ref([]);
 
 // 处理描述编辑器的变化
 const onDescriptionChange = (v: string) => {
@@ -211,7 +209,7 @@ const doSubmit = async () => {
 
 // 跳转到选择题目页面
 const goToSelectQuestions = () => {
-  // 保存当前表单数据到 localStorage
+  // 保存当前表单数据到 localStorage，同时保存更新状态
   localStorage.setItem(
     "contestFormData",
     JSON.stringify({
@@ -219,6 +217,8 @@ const goToSelectQuestions = () => {
       description: formData.value.description,
       startTime: formData.value.startTime,
       endTime: formData.value.endTime,
+      isUpdate: updatePage.value, // 保存更新状态
+      contestId: route.query.id, // 保存比赛ID
     })
   );
 
@@ -228,6 +228,8 @@ const goToSelectQuestions = () => {
       selectedQuestions.value.length > 0
         ? encodeURIComponent(JSON.stringify(selectedQuestions.value))
         : undefined,
+    isUpdate: updatePage.value, // 在查询参数中也带上更新状态
+    contestId: route.query.id, // 在查询参数中带上比赛ID
   };
 
   router.push({
@@ -264,6 +266,7 @@ const loadContestDetail = async (id: string) => {
         selectedQuestions.value = detail.problems.map((q) => ({
           id: String(q.id),
           title: q.title || "",
+          content: q.content || "",
           order: q.problemOrder || 0,
           tags: q.tags || [],
         }));
@@ -279,20 +282,31 @@ const loadContestDetail = async (id: string) => {
 
 // 从路由参数中获取选中的题目
 onMounted(() => {
-  // 如果不是编辑页面，尝试恢复之前保存的表单数据
-  if (!route.query.id) {
-    const savedFormData = localStorage.getItem("contestFormData");
-    if (savedFormData) {
-      const parsedData = JSON.parse(savedFormData);
-      formData.value = {
-        ...formData.value,
-        ...parsedData,
-      };
-      // 清除保存的数据
-      localStorage.removeItem("contestFormData");
+  // 从 localStorage 恢复表单数据
+  const savedFormData = localStorage.getItem("contestFormData");
+  if (savedFormData) {
+    const parsedData = JSON.parse(savedFormData);
+    formData.value = {
+      ...formData.value,
+      ...parsedData,
+    };
+
+    // 如果是更新操作，确保路由参数正确
+    if (parsedData.isUpdate && parsedData.contestId) {
+      router.replace({
+        path: route.path,
+        query: {
+          ...route.query,
+          id: parsedData.contestId,
+        },
+      });
     }
+
+    // 清除保存的数据
+    localStorage.removeItem("contestFormData");
   }
 
+  // 处理选中的题目
   const selectedQuestionsStr = route.query.selectedQuestions;
   if (selectedQuestionsStr) {
     try {

@@ -59,7 +59,7 @@
       <!-- 题目列表列 -->
       <template #questions="{ record }">
         <div>
-          <p>共 {{ record.contestQuestions?.length || 0 }} 道题目</p>
+          <p>共 {{ record.problems?.length || 0 }} 道题目</p>
         </div>
       </template>
 
@@ -131,7 +131,16 @@ const isAdmin = computed(
 
 const dataList = ref<ContestVO[]>([]);
 const total = ref(0);
-const searchParams = ref<ContestSearchParams>({
+
+// 修改搜索参数的类型定义
+interface SearchParams {
+  title: string;
+  status: number | undefined;
+  pageSize: number;
+  current: number;
+}
+
+const searchParams = ref<SearchParams>({
   title: "",
   status: undefined,
   pageSize: 10,
@@ -199,32 +208,46 @@ const getStatusColor = (record: ContestVO): string => {
   return colorMap[status];
 };
 
-// 加数据
+// 修改加载数据函数
 const loadData = async () => {
   try {
+    // 构造查询参数，确保所有必要的参数都有值
     const queryParams = {
-      current: searchParams.value.current,
-      pageSize: searchParams.value.pageSize,
-    } as ContestQueryRequest;
+      name: searchParams.value.title || undefined,
+      status: searchParams.value.status,
+      pageSize: searchParams.value.pageSize || 10,
+      current: searchParams.value.current || 1,
+      sortField: "createTime", // 添加排序字段
+      sortOrder: "descend", // 添加排序顺序
+    };
 
-    if (searchParams.value.title) {
-      queryParams.title = searchParams.value.title;
-    }
-    if (searchParams.value.status !== undefined) {
-      queryParams.status = searchParams.value.status;
-    }
-
+    console.log("查询参数:", queryParams);
     const res = await ContestControllerService.listContestByPageUsingPost1(
       queryParams
     );
+    console.log("查询结果:", res);
 
     if (res.code === 0 && res.data) {
       dataList.value = res.data.records;
       total.value = res.data.total;
+    } else if (res.code === 50030) {
+      // token过期，重新登录
+      await store.dispatch("user/getLoginUser");
+      // 重新加载数据
+      const newRes = await ContestControllerService.listContestByPageUsingPost1(
+        queryParams
+      );
+      if (newRes.code === 0 && newRes.data) {
+        dataList.value = newRes.data.records;
+        total.value = newRes.data.total;
+      } else {
+        message.error(newRes.message || "加载数据失败");
+      }
     } else {
       message.error(res.message || "加载数据失败");
     }
   } catch (error) {
+    console.error("加载失败，详细错误:", error);
     message.error("加载数据失败");
   }
 };
@@ -252,13 +275,23 @@ const joinContest = async (record: ContestVO) => {
     const res = await ContestControllerService.registerContestUsingPost1(
       record.id
     );
-    if (res.code !== 0) {
+    if (res.code === 0) {
+      message.success("报名成功");
+      // 报名成功后跳转到比赛详情页
+      router.push({
+        path: `/contest/detail/${record.id}`,
+        query: { registered: "true" }, // 传递报名状态
+      });
+    } else if (res.code === 50001) {
+      router.push({
+        path: `/contest/detail/${record.id}`,
+        query: { registered: "true" }, // 传递报名状态
+      });
+    } else {
       message.error(res.message || "报名失败");
-      return;
     }
-    message.success("报名成功");
-    router.push(`/contest/detail/${record.id}`);
   } catch (error) {
+    console.error("报名失败:", error);
     message.error("操作失败");
   }
 };
@@ -276,7 +309,17 @@ const updateContest = (record: ContestVO) => {
   });
 };
 
+// 修改 onMounted
 onMounted(() => {
+  // 初始化搜索参数
+  searchParams.value = {
+    title: "",
+    status: undefined,
+    pageSize: 10,
+    current: 1,
+  };
+
+  // 加载数据
   loadData();
 });
 </script>

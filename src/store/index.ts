@@ -2,6 +2,7 @@ import { createStore } from "vuex";
 import user from "./user";
 import question from "./question";
 import tologin from "@/store/tologin";
+import editor from "./modules/editor";
 
 export default createStore({
   state: {},
@@ -12,5 +13,6 @@ export default createStore({
     user,
     question,
     tologin,
+    editor,
   },
 });

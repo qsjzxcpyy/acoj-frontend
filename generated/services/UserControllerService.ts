@@ -1,8 +1,3 @@
-/* eslint-disable */
-import type { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
-import type { BaseResponse_LoginUserVO_ } from "../models/BaseResponse_LoginUserVO_";
-import type { BaseResponse_long_ } from "../models/BaseResponse_long_";
-import type { BaseResponse_Page_User_ } from "../models/BaseResponse_Page_User_";
 import type { BaseResponse_Page_UserVO_ } from "../models/BaseResponse_Page_UserVO_";
 import type { BaseResponse_User_ } from "../models/BaseResponse_User_";
 import type { BaseResponse_UserLoginRespVO_ } from "../models/BaseResponse_UserLoginRespVO_";
@@ -17,6 +12,10 @@ import type { UserUpdateRequest } from "../models/UserUpdateRequest";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request } from "../core/request";
+import { BaseResponse_long_ } from "../models/BaseResponse_long_";
+import { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
+import { BaseResponse_LoginUserVO_ } from "../models/BaseResponse_LoginUserVO_";
+import { BaseResponse_Page_User_ } from "../models/BaseResponse_Page_User_";
 
 export class UserControllerService {
   /**

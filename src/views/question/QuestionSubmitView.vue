@@ -58,7 +58,7 @@ import {
   QuestionSubmitQueryRequest,
 } from "../../../generated";
 import message from "@arco-design/web-vue/es/message";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import moment from "moment";
 import { useStore } from "vuex";
 import question from "@/store/question";
@@ -76,6 +76,7 @@ const searchParams = ref<QuestionSubmitQueryRequest>({
 });
 
 const router = useRouter();
+const route = useRoute();
 
 const loadData = async () => {
   const res =
@@ -117,18 +118,52 @@ watchEffect(() => {
   loadData();
 });
 onMounted(() => {
+  // 获取来源页面的信息
+  const fromQuestion = route.query.questionId;
+  const fromContest = route.query.contestId;
+  const returnPath = route.query.returnPath as string;
+
+  // 初始化搜索参数
+  searchParams.value = {
+    questionId: fromQuestion as string,
+    language: undefined,
+    sortField: "createTime",
+    sortOrder: "descend",
+    pageSize: 10,
+    current: 1,
+  };
+
+  // 保存返回路径到 history state
+  if (returnPath) {
+    const state = {
+      returnPath,
+      fromContest,
+      fromQuestion,
+    };
+    history.replaceState(state, "", window.location.href);
+
+    // 添加 popstate 事件监听
+    window.onpopstate = (event) => {
+      const state = event.state;
+      if (state?.returnPath) {
+        // 返回到题目详情页
+        router.replace(state.returnPath);
+      } else {
+        // 如果没有保存的路径，返回上一页
+        router.go(-1);
+      }
+    };
+  }
+
   loadData();
-  // //创建定时任务;
-  // const timer = setInterval(() => {
-  //   loadData();
-  // }, 5000);
-  //
-  // // 监听页面关闭事件
-  // onBeforeUnmount(() => {
-  //   // 取消定时任务
-  //   clearInterval(timer);
-  // });
 });
+
+// 清理事件监听
+onBeforeUnmount(() => {
+  // 清除事件监听
+  window.onpopstate = null;
+});
+
 const columns = [
   {
     title: "题目名称",

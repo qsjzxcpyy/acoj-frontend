@@ -1,6 +1,5 @@
-/* eslint-disable */
-import type { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
-import type { BaseResponse_ContestVO_ } from "../models/BaseResponse_ContestVO_";
+import type { BaseResponse_List_ContestQuestionSubmitVO_ } from "../models/BaseResponse_List_ContestQuestionSubmitVO_";
+import type { BaseResponse_List_ContestRankDetailVO_ } from "../models/BaseResponse_List_ContestRankDetailVO_";
 import type { BaseResponse_long_ } from "../models/BaseResponse_long_";
 import type { BaseResponse_Page_ContestVO_ } from "../models/BaseResponse_Page_ContestVO_";
 import type { ContestAddRequest } from "../models/ContestAddRequest";
@@ -9,6 +8,9 @@ import type { ContestUpdateRequest } from "../models/ContestUpdateRequest";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request } from "../core/request";
+import { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
+import { BaseResponse_ContestVO_ } from "../models/BaseResponse_ContestVO_";
+import { BaseResponse_List_ContestProblemStatisticsVO_ } from "../models/BaseResponse_List_ContestProblemStatisticsVO_";
 
 export class ContestControllerService {
   /**
@@ -103,6 +105,29 @@ export class ContestControllerService {
   }
 
   /**
+   * getContestProblemStatistics
+   * @param contestId contestId
+   * @returns BaseResponse_List_ContestProblemStatisticsVO_ OK
+   * @throws ApiError
+   */
+  public static getContestProblemStatisticsUsingGet1(
+    contestId: number
+  ): CancelablePromise<BaseResponse_List_ContestProblemStatisticsVO_> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/contest/problem/statistics/{contestId}",
+      path: {
+        contestId: contestId,
+      },
+      errors: {
+        401: `Unauthorized`,
+        403: `Forbidden`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
    * calculateContestRanking
    * @param id id
    * @returns BaseResponse_boolean_ OK
@@ -117,6 +142,29 @@ export class ContestControllerService {
       url: "/api/contest/rank/calculate/{id}",
       path: {
         id: id,
+      },
+      errors: {
+        401: `Unauthorized`,
+        403: `Forbidden`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * getContestRankDetail
+   * @param contestId contestId
+   * @returns BaseResponse_List_ContestRankDetailVO_ OK
+   * @throws ApiError
+   */
+  public static getContestRankDetailUsingGet1(
+    contestId: number
+  ): CancelablePromise<BaseResponse_List_ContestRankDetailVO_> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/contest/rank/detail/{contestId}",
+      path: {
+        contestId: contestId,
       },
       errors: {
         401: `Unauthorized`,
@@ -164,6 +212,29 @@ export class ContestControllerService {
       method: "POST",
       url: "/api/contest/update",
       body: contestUpdateRequest,
+      errors: {
+        401: `Unauthorized`,
+        403: `Forbidden`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * getUserContestSubmissions
+   * @param contestId contestId
+   * @returns BaseResponse_List_ContestQuestionSubmitVO_ OK
+   * @throws ApiError
+   */
+  public static getUserContestSubmissionsUsingGet1(
+    contestId: number
+  ): CancelablePromise<BaseResponse_List_ContestQuestionSubmitVO_> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/contest/user/submissions/{contestId}",
+      path: {
+        contestId: contestId,
+      },
       errors: {
         401: `Unauthorized`,
         403: `Forbidden`,

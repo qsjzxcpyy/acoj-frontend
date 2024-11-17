@@ -1,7 +1,3 @@
-/* eslint-disable */
-import type { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
-import type { BaseResponse_List_AiChatRecordVo_ } from "../models/BaseResponse_List_AiChatRecordVo_";
-import type { BaseResponse_long_ } from "../models/BaseResponse_long_";
 import type { BaseResponse_Page_Question_ } from "../models/BaseResponse_Page_Question_";
 import type { BaseResponse_Page_QuestionSubmitVO_ } from "../models/BaseResponse_Page_QuestionSubmitVO_";
 import type { BaseResponse_Page_QuestionVO_ } from "../models/BaseResponse_Page_QuestionVO_";
@@ -19,6 +15,9 @@ import type { QuestionUpdateRequest } from "../models/QuestionUpdateRequest";
 import type { CancelablePromise } from "../core/CancelablePromise";
 import { OpenAPI } from "../core/OpenAPI";
 import { request as __request } from "../core/request";
+import { BaseResponse_long_ } from "../models/BaseResponse_long_";
+import { BaseResponse_boolean_ } from "../models/BaseResponse_boolean_";
+import { BaseResponse_List_AiChatRecordVo_ } from "../models/BaseResponse_List_AiChatRecordVo_";
 
 export class QuestionControllerService {
   /**
@@ -256,28 +255,6 @@ export class QuestionControllerService {
   }
 
   /**
-   * doQuestionSubmit
-   * @param questionSubmitAddRequest questionSubmitAddRequest
-   * @returns BaseResponse_QuestionSubmitResp_ OK
-   * @returns any Created
-   * @throws ApiError
-   */
-  public static doQuestionSubmitUsingPost1(
-    questionSubmitAddRequest: QuestionSubmitAddRequest
-  ): CancelablePromise<BaseResponse_QuestionSubmitResp_ | any> {
-    return __request(OpenAPI, {
-      method: "POST",
-      url: "/api/question/question_submit/do",
-      body: questionSubmitAddRequest,
-      errors: {
-        401: `Unauthorized`,
-        403: `Forbidden`,
-        404: `Not Found`,
-      },
-    });
-  }
-
-  /**
    * listQuestionSubmitByPage
    * @param questionSubmitQueryRequest questionSubmitQueryRequest
    * @returns BaseResponse_Page_QuestionSubmitVO_ OK
@@ -291,6 +268,33 @@ export class QuestionControllerService {
       method: "POST",
       url: "/api/question/question_submit/list/page",
       body: questionSubmitQueryRequest,
+      errors: {
+        401: `Unauthorized`,
+        403: `Forbidden`,
+        404: `Not Found`,
+      },
+    });
+  }
+
+  /**
+   * doQuestionSubmit
+   * @param questionSubmitAddRequest questionSubmitAddRequest
+   * @param contestId contestId
+   * @returns BaseResponse_QuestionSubmitResp_ OK
+   * @returns any Created
+   * @throws ApiError
+   */
+  public static doQuestionSubmitUsingPost1(
+    questionSubmitAddRequest: QuestionSubmitAddRequest,
+    contestId?: number
+  ): CancelablePromise<BaseResponse_QuestionSubmitResp_ | any> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/question/submit",
+      query: {
+        contestId: contestId,
+      },
+      body: questionSubmitAddRequest,
       errors: {
         401: `Unauthorized`,
         403: `Forbidden`,
