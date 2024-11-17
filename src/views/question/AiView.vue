@@ -10,8 +10,10 @@
           <a-list-item>
             <a-list-item-meta>
               <template #title>
-                <div class="message-header">
-                  {{ item.sender }}
+                <div class="message-container">
+                  <div class="message-header">
+                    <span class="sender-name">{{ item.sender }}</span>
+                  </div>
                   <span v-if="item.time" class="message-time">
                     {{ formatTime(item.time) }}
                   </span>
@@ -217,16 +219,33 @@ onMounted(async () => {
   background: linear-gradient(to bottom, #f5f5f5, #ffffff);
 }
 
+.message-container {
+  position: relative;
+  padding-left: 0;
+}
+
 .message-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center; /* Vertically center the content */
+  display: inline-block;
 }
 
 .message-time {
-  margin-left: 576px; /* Set a fixed margin */
+  position: absolute;
+  left: 560px; /* 固定距离聊天框左侧的距离 */
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 12px;
   color: #888;
+  padding: 4px 8px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.message-content {
+  max-width: 80%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  position: relative;
 }
 
 /* Loading indicator for AI response */
