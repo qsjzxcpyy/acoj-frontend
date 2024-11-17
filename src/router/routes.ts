@@ -1,20 +1,16 @@
 import { RouteRecordRaw } from "vue-router";
-import HomeView from "@/views/ExampleView.vue";
 import UserLayout from "@/Layout/UserLayout.vue";
 import UserLoginView from "@/views/user/UserLoginView.vue";
 import UserRegisterView from "@/views/user/UserRegisterView.vue";
-import AdminView from "@/views/AdminView.vue";
+import UserLogoutView from "@/views/user/UserLogoutView.vue";
 import NoAuthView from "@/views/NoAuthView.vue";
 import ACCESS_ENUM from "@/access/ACCESS_ENUM";
-import AddQuestionView from "@/views/question/AddQuestionView.vue";
-import ManageQuestionView from "@/views/question/ManageQuestionView.vue";
 import QuestionsView from "@/views/question/QuestionsView.vue";
 import ViewQuestionView from "@/views/question/ViewQuestionView.vue";
 import QuestionSubmitView from "@/views/question/QuestionSubmitView.vue";
-import UserLogoutView from "@/views/user/UserLogoutView.vue";
 import AiView from "@/views/question/AiView.vue";
-import AddContentView from "@/views/content/AddContestView.vue";
 
+// 使用动态导入替代静态导入
 export const routes: Array<RouteRecordRaw> = [
   {
     path: "/user",
@@ -63,7 +59,7 @@ export const routes: Array<RouteRecordRaw> = [
     path: "/view/question/:id",
     name: "在线题目",
     component: ViewQuestionView,
-    props: true, //动态路由接受的参数，在view中已属性的方式拿到
+    props: true,
     meta: {
       access: ACCESS_ENUM.USER,
       hideInMeta: true,
@@ -72,7 +68,7 @@ export const routes: Array<RouteRecordRaw> = [
   {
     path: "/add/question",
     name: "创建题目",
-    component: AddQuestionView,
+    component: () => import("@/views/question/AddQuestionView.vue"),
     meta: {
       keepAlive: true,
       access: ACCESS_ENUM.ADMIN,
@@ -81,7 +77,7 @@ export const routes: Array<RouteRecordRaw> = [
   {
     path: "/update/question",
     name: "修改题目",
-    component: AddQuestionView,
+    component: () => import("@/views/question/AddQuestionView.vue"),
     meta: {
       access: ACCESS_ENUM.USER,
       hideInMeta: true,
@@ -90,7 +86,7 @@ export const routes: Array<RouteRecordRaw> = [
   {
     path: "/manage/question",
     name: "管理题目",
-    component: ManageQuestionView,
+    component: () => import("@/views/question/ManageQuestionView.vue"),
     meta: {
       access: ACCESS_ENUM.ADMIN,
     },
@@ -114,7 +110,7 @@ export const routes: Array<RouteRecordRaw> = [
   {
     path: "/contest/add",
     name: "添加比赛",
-    component: AddContentView,
+    component: () => import("@/views/content/AddContestView.vue"),
     meta: {
       access: ACCESS_ENUM.ADMIN,
       hideInMeta: true,
@@ -146,6 +142,15 @@ export const routes: Array<RouteRecordRaw> = [
     name: "比赛详情",
     component: () => import("@/views/content/ContestDetailView.vue"),
     props: true,
+    meta: {
+      hideInMenu: true,
+      hideInMeta: true,
+    },
+  },
+  {
+    path: "/view/saved-code",
+    name: "查看提交代码",
+    component: () => import("@/views/question/ViewSavedCodeView.vue"),
     meta: {
       hideInMenu: true,
       hideInMeta: true,

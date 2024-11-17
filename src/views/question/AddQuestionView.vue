@@ -112,6 +112,7 @@ import {
 import message from "@arco-design/web-vue/es/message";
 import { useRoute } from "vue-router";
 import store from "@/store";
+import router from "@/router";
 
 const route = useRoute();
 
@@ -136,24 +137,27 @@ const form = ref({
 const updatePage = computed(() => route.path.includes("update"));
 
 const doSubmit = async () => {
-  if (updatePage.value) {
-    const res = await QuestionControllerService.updateQuestionUsingPost1(
-      form.value
-    );
-    if (res.code === 0) {
-      message.success("更新成功");
-    } else {
-      message.error("更新失败," + res.message);
-    }
-  } else {
+  if (!form.value.title) {
+    message.error("请输入标题");
+    return;
+  }
+  if (!form.value.content) {
+    message.error("请输入题目内容");
+    return;
+  }
+  try {
     const res = await QuestionControllerService.addQuestionUsingPost1(
-      form.value
+      form.value as any
     );
     if (res.code === 0) {
       message.success("创建成功");
+      // 跳转到管理题目页面
+      router.push("/manage/question");
     } else {
-      message.error("创建失败" + res.message);
+      message.error("创建失败," + res.message);
     }
+  } catch (error) {
+    message.error("创建失败");
   }
 };
 

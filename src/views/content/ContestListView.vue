@@ -89,7 +89,7 @@
             <a-button
               type="primary"
               status="warning"
-              @click="viewContestResult(record)"
+              @click="toContestDetail(record)"
             >
               查看结果
             </a-button>
@@ -296,9 +296,13 @@ const joinContest = async (record: ContestVO) => {
   }
 };
 
-// 查看比赛结果
-const viewContestResult = (record: ContestVO) => {
-  router.push(`/contest/result/${record.id}`);
+const toContestDetail = (record: any) => {
+  router.push({
+    path: `/contest/detail/${record.id}`,
+    query: {
+      activeTab: getStatusText(record) === "已结束" ? "3" : "1", // 如果比赛已结束，直接跳转到排行榜标签
+    },
+  });
 };
 
 // 更新比赛（管理员功能）

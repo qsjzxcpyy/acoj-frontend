@@ -33,19 +33,23 @@
       @page-change="onPageChange"
     >
       <template #questionName="{ record }">
-        {{ record.questionVO.title }}
+        {{ record.questionVO?.title || "未知题目" }}
       </template>
       <template #userName="{ record }">
-        {{ record.userVO.userName }}
+        {{ record.userVO?.userName || "未知用户" }}
       </template>
       <template #judgeInfo="{ record }">
-        {{ record.judgeInfo.message }}
+        {{ record.judgeInfo?.message || "未知状态" }}
       </template>
       <template #timeAndSpace="{ record }">
-        {{ record.judgeInfo.time }} ms / {{ record.judgeInfo.memory ?? 110 }} KB
+        {{ record.judgeInfo?.time || 0 }} ms /
+        {{ record.judgeInfo?.memory ?? 0 }} KB
       </template>
       <template #createTime="{ record }">
         {{ moment(record.createTime).format("YYYY-MM-DD") }}
+      </template>
+      <template #code="{ record }">
+        <a-link @click="viewCode(record)">查看代码</a-link>
       </template>
     </a-table>
   </div>
@@ -190,7 +194,34 @@ const columns = [
     title: "创建时间",
     slotName: "createTime",
   },
+  {
+    title: "代码",
+    slotName: "code",
+    width: 100,
+  },
 ];
+
+const viewCode = (record: any) => {
+  // 保存代码到 localStorage
+  const codeKey = `submit_code_${record.id}`;
+  const saveData = {
+    code: record.code,
+    language: record.language,
+    timestamp: record.createTime,
+    questionId: record.questionId,
+    from: record.contestId ? "contest" : "normal",
+    submitId: record.id,
+  };
+  localStorage.setItem(codeKey, JSON.stringify(saveData));
+
+  // 跳转到代码查看页面
+  router.push({
+    path: "/view/saved-code",
+    query: {
+      codeKey,
+    },
+  });
+};
 </script>
 
 <style scoped>

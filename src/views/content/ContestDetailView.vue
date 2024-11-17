@@ -141,19 +141,9 @@
 
             <!-- 题目状态 -->
             <template #status="{ record }">
-              <a-tooltip :content="getQuestionStatusText(record)">
+              <a-tooltip :content="getStatusTooltip(record)">
                 <a-tag :color="getQuestionStatusColor(record)">
-                  <template #icon>
-                    <icon-check-circle v-if="record.accepted" />
-                    <icon-close-circle v-else-if="record.attempted" />
-                    <icon-minus-circle v-else />
-                  </template>
-                  <span class="status-text">
-                    <template v-if="record.submitCount > 0">
-                      {{ record.submitCount }}次
-                    </template>
-                    <template v-else> 未尝试 </template>
-                  </span>
+                  {{ getQuestionStatusText(record) }}
                 </a-tag>
               </a-tooltip>
             </template>
@@ -171,29 +161,30 @@
 
             <!-- 通过统计 -->
             <template #stats="{ record }">
-              <a-tooltip>
-                <template #content>
-                  通过率:
-                  {{
-                    (
-                      (record.acceptedNum / (record.submitNum || 1)) *
-                      100
-                    ).toFixed(1)
-                  }}%
-                </template>
-                <a-space>
-                  <span class="accepted-count">{{ record.acceptedNum }}</span>
-                  <span class="divider">/</span>
-                  <span class="submit-count">{{ record.submitNum }}</span>
-                </a-space>
-              </a-tooltip>
+              <div class="stats-wrapper">
+                <a-tooltip
+                  :content="`通过率: ${(
+                    (record.acceptedNum / (record.submitNum || 1)) *
+                    100
+                  ).toFixed(1)}%`"
+                >
+                  <div class="stats-container">
+                    <div class="stat-number accepted">
+                      {{ record.acceptedNum }}
+                    </div>
+                    <span class="divider">/</span>
+                    <div class="stat-number submitted">
+                      {{ record.submitNum }}
+                    </div>
+                  </div>
+                </a-tooltip>
+              </div>
             </template>
           </a-table>
         </a-tab-pane>
 
         <!-- 排行榜标签页 -->
         <a-tab-pane key="3" title="排行榜">
-          <!-- 添加排行榜头部区域 -->
           <div class="rank-header">
             <div class="rank-title">
               <icon-trophy class="rank-icon" />
@@ -210,9 +201,15 @@
           <a-table
             :columns="rankColumns"
             :data="rankings"
-            :pagination="false"
+            :pagination="{
+              total: rankingPagination.total,
+              current: rankingPagination.current,
+              pageSize: rankingPagination.pageSize,
+              showTotal: true,
+            }"
             :bordered="false"
             size="medium"
+            @page-change="handleRankingPageChange"
           >
             <template #user="{ record }">
               <a-space>
@@ -224,23 +221,51 @@
                 {{ record.userName }}
               </a-space>
             </template>
-            <template #questionTimes="{ record }">
-              <div class="question-times">
+            <template #problemDetails="{ record }">
+              <div class="problem-details">
                 <template
-                  v-for="(time, index) in record.questionTimes"
-                  :key="index"
+                  v-for="problem in record.problemDetails"
+                  :key="problem.problemId"
                 >
-                  <a-tooltip
-                    v-if="time"
-                    :content="
-                      formatQuestionTime(time, record.penalties?.[index])
-                    "
-                  >
-                    <a-tag :color="getQuestionTimeColor(time)">
-                      {{ formatDuration(time) }}
+                  <a-tooltip>
+                    <template #content>
+                      {{ problem.problemTitle }}
+                      <br />
+                      提交次数: {{ problem.submitCount }}
+                      <br />
+                      {{
+                        problem.accepted
+                          ? `通过时间: ${problem.firstAcceptedTime}分钟`
+                          : "未通过"
+                      }}
+                      {{
+                        problem.penaltyTime > 0
+                          ? `罚时: ${problem.penaltyTime}分钟`
+                          : ""
+                      }}
+                    </template>
+                    <a-tag
+                      :color="
+                        problem.accepted
+                          ? 'green'
+                          : problem.submitCount > 0
+                          ? 'red'
+                          : 'gray'
+                      "
+                      class="problem-tag"
+                    >
+                      {{ problem.problemOrder }}
+                      <template v-if="problem.accepted">
+                        <icon-check class="status-icon" />
+                      </template>
+                      <template v-else-if="problem.submitCount > 0">
+                        <icon-close class="status-icon" />
+                      </template>
+                      <template v-else>
+                        <icon-minus class="status-icon" />
+                      </template>
                     </a-tag>
                   </a-tooltip>
-                  <a-tag v-else color="gray">-</a-tag>
                 </template>
               </div>
             </template>
@@ -260,7 +285,6 @@ import { Contest, ContestQuestion } from "@/types/contest";
 import {
   IconCalendar,
   IconClockCircle,
-  IconHourglass,
   IconUserGroup,
   IconTrophy,
   IconCheckCircle,
@@ -284,6 +308,26 @@ type Timer = ReturnType<typeof setInterval>;
 const route = useRoute();
 const router = useRouter();
 
+// 添加 RankingItem 接口定义
+interface RankingItem {
+  rank: number;
+  userName: string;
+  userAvatar: string;
+  totalScore: number;
+  totalTime: number;
+  penaltyTime: number;
+  solvedProblems: number;
+  problemDetails: {
+    problemId: string;
+    problemOrder: number;
+    problemTitle: string;
+    accepted: boolean;
+    submitCount: number;
+    firstAcceptedTime: number;
+    penaltyTime: number;
+  }[];
+}
+
 // 比赛信息
 const contestInfo = ref<Contest>({
   id: "",
@@ -296,20 +340,35 @@ const contestInfo = ref<Contest>({
 
 const userRank = ref(0);
 const questions = ref<ContestQuestion[]>([]);
-const rankings = ref([]);
+const rankings = ref<RankingItem[]>([]);
 
 // 是否已报名
 const isRegistered = ref(false);
 
 // 添加当前标签页的响应式变量
-const activeTab = ref((route.query.activeTab as string) || "1");
+const activeTab = ref(route.query.activeTab?.toString() || "1");
+
+// 添加分页相关的响应式变量
+const rankingPagination = ref({
+  current: 1,
+  pageSize: 10,
+  total: 0,
+});
 
 // 获取比赛时长
 const getDuration = () => {
   const start = moment(contestInfo.value.startTime);
   const end = moment(contestInfo.value.endTime);
   const duration = moment.duration(end.diff(start));
-  return `${duration.hours()}小时${duration.minutes()}分钟`;
+
+  // 计算总小时数和剩余分钟数
+  const totalMinutes = duration.asMinutes();
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = Math.floor(totalMinutes % 60);
+
+  return hours > 0
+    ? `${hours}小时${minutes > 0 ? minutes + "分钟" : ""}`
+    : `${minutes}分钟`;
 };
 
 // 判断比赛是否已开始
@@ -321,7 +380,7 @@ const isContestStarted = computed(() => {
 
 // 修改题目表格列定义
 const questionColumns = computed(() => {
-  // 如果比赛未开始，只显示序号列
+  // 如果比赛未开始，显示序号列
   if (!isContestStarted.value) {
     return [
       {
@@ -345,7 +404,7 @@ const questionColumns = computed(() => {
       width: 80,
     },
     {
-      title: "题目名称",
+      title: "题名称",
       slotName: "title",
     },
     {
@@ -357,11 +416,12 @@ const questionColumns = computed(() => {
       title: "通过/提交",
       slotName: "stats",
       width: 120,
+      render: ({ record }) => `${record.acceptedNum}/${record.submitNum}`,
     },
   ];
 });
 
-// 排名表格列定义
+// 修改排名表格列定义
 const rankColumns = [
   {
     title: "排名",
@@ -374,19 +434,25 @@ const rankColumns = [
     width: 200,
   },
   {
-    title: "得分",
-    dataIndex: "score",
+    title: "总分",
+    dataIndex: "totalScore",
     width: 100,
+  },
+  {
+    title: "总用时",
+    dataIndex: "totalTime",
+    width: 100,
+    render: ({ record }) => `${record.totalTime}分钟`,
   },
   {
     title: "罚时",
-    dataIndex: "penalty",
+    dataIndex: "penaltyTime",
     width: 100,
-    render: ({ record }) => `${record.penalty}分钟`,
+    render: ({ record }) => `${record.penaltyTime}分钟`,
   },
   {
-    title: "题目完成时间",
-    slotName: "questionTimes",
+    title: "解题详情",
+    slotName: "problemDetails",
   },
 ];
 
@@ -405,7 +471,7 @@ const getStatusText = (contest: Contest): string => {
   }
 };
 
-// 获取状态标签颜色
+// 获取态标签颜色
 const getStatusColor = (contest: Contest): string => {
   const status = getStatusText(contest);
   const colorMap: Record<string, string> = {
@@ -449,132 +515,208 @@ const toQuestionView = (question: any) => {
   });
 };
 
-// 修改题目状态处理逻辑
+// 修改题目状态文本获取函数
+const getQuestionStatusText = (question: ContestQuestion): string => {
+  if (question.accepted) {
+    return "✓"; // 通过显示对勾
+  } else if (question.attempted) {
+    return "✗"; // 未通过显示叉
+  } else {
+    return "-"; // 未尝试显示横
+  }
+};
+
+// 修改状态颜色获取函数
+const getQuestionStatusColor = (question: ContestQuestion): string => {
+  if (question.accepted) {
+    return "green"; // 通过为绿色
+  } else if (question.attempted) {
+    return "red"; // 未通过为红色
+  } else {
+    return "gray"; // 未尝试为灰色
+  }
+};
+
+// 获取状态提示文本
+const getStatusTooltip = (question: ContestQuestion): string => {
+  if (question.accepted) {
+    return `已通过 (尝试次数: ${question.attemptCount || 1})`;
+  } else if (question.attempted) {
+    return `未通过 (尝试次数: ${question.attemptCount || 1})`;
+  } else {
+    return "未尝试";
+  }
+};
+
+// 修改 loadQuestionStatus 函数
 const loadQuestionStatus = async () => {
   try {
     const contestId = route.params.id as string;
     // 获取用户在比赛中的提交记录
-    const submissionsRes =
+    let submissionsRes =
       await ContestControllerService.getUserContestSubmissionsUsingGet1(
         contestId as any
       );
     console.log("用户提交记录:", submissionsRes);
 
+    if (submissionsRes.code === 50030) {
+      // 在其他地方调用
+      store.dispatch("user/getLoginUser");
+      submissionsRes =
+        await ContestControllerService.getUserContestSubmissionsUsingGet1(
+          contestId as any
+        );
+    }
+    let res1 =
+      await ContestControllerService.getContestProblemStatisticsUsingGet1(
+        contestId as any
+      );
+    if (res1.code === 50030) {
+      // 在其他地方调用
+      store.dispatch("user/getLoginUser");
+      res1 =
+        await ContestControllerService.getContestProblemStatisticsUsingGet1(
+          contestId as any
+        );
+    }
+
+    const questionStatusMap = new Map();
     if (submissionsRes.code === 0 && submissionsRes.data) {
       // 创建题目状态映射
-      const questionStatusMap = new Map();
 
       // 处理提交记录
       submissionsRes.data.forEach((submission) => {
         const questionId = submission.questionId;
-        const status = submission.status; // 获取提交状态
-        console.log("题目提交状态:", status, "题目ID:", questionId);
-
-        if (!questionStatusMap.has(questionId)) {
-          questionStatusMap.set(questionId, {
-            attempted: true,
-            accepted: status === 2, // 2 表示通过
-            submitCount: 1,
-            status: status, // 保存状态码
-          });
-        } else {
-          const currentStatus = questionStatusMap.get(questionId);
-          currentStatus.submitCount += 1;
-          if (status === 2) {
-            // 如果有一次通过就标记为通过
-            currentStatus.accepted = true;
-          }
-          currentStatus.status = status; // 更新最新状态
-        }
-      });
-
-      // 更新题目列表
-      questions.value = questions.value.map((q) => {
-        const status = questionStatusMap.get(q.id) || {
+        let questionStatus = {
           attempted: false,
           accepted: false,
           submitCount: 0,
-          status: 0, // 默认状态
         };
-
-        return {
-          ...q,
-          attempted: status.attempted,
-          accepted: status.accepted,
-          submitCount: status.submitCount,
-          status: status.status, // 添加状态字段
-        };
+        questionStatus.accepted = submission.accepted as boolean;
+        questionStatus.attempted = (submission.submitCount as number) > 0;
+        questionStatus.submitCount = submission.submitCount as number;
+        questionStatusMap.set(questionId, questionStatus);
       });
-
-      console.log("更新后的题目列表:", questions.value);
     }
+
+    const totalQuestionStatusMap = new Map();
+
+    if (res1.code === 0 && res1.data) {
+      res1.data.forEach((problem) => {
+        totalQuestionStatusMap.set(problem.problemId, {
+          acceptedCount: problem.acceptedCount || 0,
+          acceptedRate: problem.acceptedRate || 0,
+          submitCount: problem.totalSubmissions || 0,
+        });
+      });
+    }
+
+    // 更新题目列表
+    questions.value = questions.value.map((q) => {
+      const status = questionStatusMap.get(q.id) || {
+        attempted: false,
+        accepted: false,
+        submitNum: 0,
+      };
+      const totalStatus = totalQuestionStatusMap.get(q.id) || {
+        acceptedCount: 0,
+        acceptedRate: 0,
+        attemptCount: 0,
+      };
+      return {
+        ...q,
+        attempted: status.attempted,
+        accepted: status.accepted,
+        attemptCount: status.submitCount,
+        acceptedNum: totalStatus.acceptedCount,
+        submitNum: totalStatus.submitCount,
+      };
+    });
+
+    console.log("更新后的题目列表:", questions.value);
   } catch (error) {
     console.error("加载题目状态失败:", error);
   }
 };
 
-// 修改状态文本获取函数
-const getQuestionStatusText = (question: ContestQuestion): string => {
-  // 根据状态码返回对应文本
-  const statusMap: Record<number, string> = {
-    0: "未提交",
-    1: "待判题",
-    2: "成功",
-    3: "失败",
-    4: "编译错误",
-    5: "时间超限",
-    6: "内存超限",
-    7: "运行错误",
-    8: "系统错误",
-  };
-
-  if (!question.attempted) {
-    return "未提交";
-  }
-
-  return `${statusMap[question.status] || "未知状态"} (${
-    question.submitCount
-  }次提交)`;
-};
-
-// 修改状态颜色获取函数
-const getQuestionStatusColor = (question: ContestQuestion): string => {
-  // 根据状态码返回对应颜色
-  const colorMap: Record<number, string> = {
-    0: "gray", // 未提交
-    1: "blue", // 待判题
-    2: "green", // 成功
-    3: "red", // 失败
-    4: "orange", // 编译错误
-    5: "orange", // 时间超限
-    6: "orange", // 内存超限
-    7: "red", // 运行错误
-    8: "red", // 系统错误
-  };
-
-  if (!question.attempted) {
-    return "gray";
-  }
-
-  return colorMap[question.status] || "gray";
-};
-
-// 添加路由监听
-
-// 添加路由变化监听
-watch(
-  () => route.query,
-  async (newQuery) => {
-    // 如果是从题目提交页面跳转回来（activeTab === "2"）
-    if (newQuery.activeTab === "2") {
-      console.log("检测到从题目提交页面返回，刷新数据");
-      await loadData();
+// 修改加载排名数据的函数
+const loadRankings = async () => {
+  try {
+    const contestId = route.params.id;
+    let res = await ContestControllerService.getContestRankDetailUsingGet1(
+      contestId as any,
+      rankingPagination.value.current,
+      rankingPagination.value.pageSize
+    );
+    console.log("排名数据返回:", res);
+    if (res.code === 50030) {
+      // 在其他地方调用
+      store.dispatch("user/getLoginUser");
+      res = await ContestControllerService.getContestRankDetailUsingGet1(
+        contestId as any,
+        rankingPagination.value.current,
+        rankingPagination.value.pageSize
+      );
     }
-  },
-  { deep: true }
-);
+    if (res.code === 0 && res.data) {
+      // 处理排名数据
+      rankings.value = res.data.records.map((item, index) => ({
+        rank:
+          (rankingPagination.value.current - 1) *
+            rankingPagination.value.pageSize +
+          index +
+          1,
+        userName: item.userVO?.userName || "未知用户",
+        userAvatar: item.userVO?.userAvatar || "",
+        totalScore: item.totalScore || 0,
+        totalTime: item.totalTime || 0,
+        penaltyTime: item.penaltyTime || 0,
+        solvedProblems: item.solvedProblems || 0,
+        problemDetails: item.problemDetails || [],
+      }));
+      // 更新总数
+      rankingPagination.value.total = res.data.total;
 
-// 修改 loadData 函数，添加更多日志
+      // 处理用户排名
+      let userRankRes =
+        await ContestControllerService.getMyContestRankUsingGet1(
+          contestId as any
+        );
+      if (userRankRes.code === 50030) {
+        // 在其他地方调用
+        store.dispatch("user/getLoginUser");
+        userRankRes = await ContestControllerService.getMyContestRankUsingGet1(
+          contestId as any
+        );
+      }
+      if (userRankRes.code === 0 && userRankRes.data) {
+        userRank.value = userRankRes.data.rank || 0;
+      }
+
+      console.log("处理后的排名数据:", rankings.value);
+    }
+  } catch (error) {
+    console.error("加载排名数据失败:", error);
+    message.error("加载排名数据失败");
+  }
+};
+
+// 添加分页变化处理函数
+const handleRankingPageChange = async (page: number) => {
+  rankingPagination.value.current = page;
+  await loadRankings();
+};
+
+// 修改刷新排名函数
+const refreshRanking = async () => {
+  try {
+    await loadRankings();
+    message.success("排名已更新");
+  } catch (error) {
+    message.error("更新排名失败");
+  }
+};
+// 修改 loadData 函数，添加排名数据的加载
 const loadData = async () => {
   try {
     const contestId = route.params.id as string;
@@ -598,6 +740,7 @@ const loadData = async () => {
         endTime: detail.endTime || "",
         participantCount: detail.participantCount || 0,
       };
+
       // 更新题目列表
       if (detail.problems) {
         questions.value = detail.problems.map((p) => ({
@@ -610,7 +753,7 @@ const loadData = async () => {
           tags: p.tags || [],
           accepted: false,
           attempted: false,
-          difficulty: "中等" as const,
+          difficulty: "" as const,
         }));
 
         questions.value.sort((a, b) => a.order - b.order);
@@ -623,7 +766,10 @@ const loadData = async () => {
       // 加载题目状态
       await loadQuestionStatus();
 
-      console.log("数据刷新完成");
+      // 加载排名数据
+      await loadRankings();
+
+      console.log("数刷新完成");
     }
   } catch (error) {
     console.error("加载/刷新失败，详细错误:", error);
@@ -631,15 +777,33 @@ const loadData = async () => {
   }
 };
 
-// 修改刷新排名函数
-const refreshRanking = async () => {
-  try {
-    await loadData();
-    message.success("排名已更新");
-  } catch (error) {
-    message.error("更新排名失败");
-  }
-};
+// 添加延迟执行函数
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// 修改路由监听
+watch(
+  [() => route.query, () => route.params],
+  async ([newQuery, newParams], [oldQuery, oldParams]) => {
+    console.log("路由变化检测 - 新查询参数:", newQuery);
+    console.log("路由变化检测 - 旧查询参数:", oldQuery);
+
+    if (
+      newQuery.activeTab === "2" ||
+      newParams.id !== oldParams?.id ||
+      newQuery.questionId !== oldQuery?.questionId
+    ) {
+      // 延迟500毫秒后执行
+      await delay(1100);
+      await loadData();
+
+      // 更新当前激活的标签页
+      if (newQuery.activeTab) {
+        activeTab.value = newQuery.activeTab.toString();
+      }
+    }
+  },
+  { deep: true, immediate: true }
+);
 
 // 在 onMounted 中初始化数据
 onMounted(async () => {
@@ -691,6 +855,13 @@ onMounted(async () => {
       }
       observer.disconnect();
     });
+  }
+
+  // 如果有指定的题目ID，可以进行相应的处理
+  const questionId = route.query.questionId;
+  if (questionId) {
+    // 可以在这里理特定题目的高亮或滚动等
+    console.log("需要定位到题目:", questionId);
   }
 });
 </script>
@@ -870,17 +1041,30 @@ onMounted(async () => {
 }
 
 .accepted-count {
-  color: #00b42a;
+  display: inline-block;
+  background-color: #52c41a;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
   font-weight: 500;
+  min-width: 32px;
+  text-align: center;
 }
 
 .submit-count {
-  color: #86909c;
+  display: inline-block;
+  background-color: #1890ff;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  min-width: 32px;
+  text-align: center;
 }
 
 .divider {
-  color: #86909c;
-  margin: 0 2px;
+  color: #8c8c8c;
+  margin: 0 4px;
 }
 
 .question-order {
@@ -1060,5 +1244,116 @@ onMounted(async () => {
 .rank-icon {
   font-size: 20px;
   color: #ffb400;
+}
+
+.stats-wrapper {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stats-container {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.stats-container:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.stat-number {
+  min-width: 32px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
+  transition: all 0.3s;
+  color: #fff;
+}
+
+.stat-number.accepted {
+  background-color: #52c41a;
+}
+
+.stats-container:hover .stat-number.accepted {
+  background-color: #389e0d;
+  transform: translateY(-2px);
+}
+
+.stat-number.submitted {
+  background-color: #1890ff;
+}
+
+.stats-container:hover .stat-number.submitted {
+  background-color: #096dd9;
+  transform: translateY(-2px);
+}
+
+.divider {
+  color: #8c8c8c;
+  margin: 0 2px;
+  font-weight: bold;
+  user-select: none;
+}
+
+.problem-details {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.problem-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 40px;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.problem-tag:hover {
+  transform: translateY(-2px);
+}
+
+.status-icon {
+  font-size: 12px;
+}
+
+:deep(.arco-tag-green) {
+  background-color: rgba(82, 196, 26, 0.1);
+  border-color: rgb(82, 196, 26);
+  color: rgb(82, 196, 26);
+}
+
+:deep(.arco-tag-green:hover) {
+  background-color: rgb(82, 196, 26);
+  color: white;
+}
+
+:deep(.arco-tag-red) {
+  background-color: rgba(255, 77, 79, 0.1);
+  border-color: rgb(255, 77, 79);
+  color: rgb(255, 77, 79);
+}
+
+:deep(.arco-tag-red:hover) {
+  background-color: rgb(255, 77, 79);
+  color: white;
+}
+
+:deep(.arco-tag-gray) {
+  background-color: rgba(134, 144, 156, 0.1);
+  border-color: rgb(134, 144, 156);
+  color: rgb(134, 144, 156);
+}
+
+:deep(.arco-tag-gray:hover) {
+  background-color: rgb(134, 144, 156);
+  color: white;
 }
 </style>

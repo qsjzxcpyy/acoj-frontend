@@ -1,4 +1,3 @@
-请结合以下代码和之前提供给你的代码分析一下为什么页面会卡死
 <template>
   <div id="ViewQuestionView">
     <a-row :gutter="[24, 24]" style="">
@@ -32,7 +31,29 @@
           </a-tab-pane>
           <a-tab-pane key="comment" title="评论" disabled> //todo</a-tab-pane>
           <a-tab-pane key="answer" title="答案" v-if="question1">
-            <MdViewer :value="question1.answer || ''" />
+            <template v-if="isInContest">
+              <a-result status="warning">
+                <template #icon>
+                  <icon-lock style="font-size: 48px; color: #ff7d00" />
+                </template>
+                <template #title>比赛进行中，无法查看答案</template>
+                <template #subtitle>答案将在比赛结束后开放查看</template>
+              </a-result>
+            </template>
+            <template v-else>
+              <template v-if="isAnswerEmpty(question1.answer)">
+                <a-result status="warning">
+                  <template #icon>
+                    <icon-exclamation-circle
+                      style="font-size: 48px; color: #ff7d00"
+                    />
+                  </template>
+                  <template #title>暂无答案</template>
+                  <template #subtitle>该题目暂未设置答案</template>
+                </a-result>
+              </template>
+              <MdViewer v-else :value="question1.answer" />
+            </template>
           </a-tab-pane>
         </a-tabs>
       </a-col>
@@ -59,6 +80,9 @@
           </a-button>
           <a-button status="warning" @click="handleClearCode">
             清空代码
+          </a-button>
+          <a-button status="primary" @click="handleSaveCode">
+            保存代码
           </a-button>
         </a-space>
       </a-col>
@@ -87,6 +111,9 @@ import store from "@/store";
 import { useStore } from "vuex";
 import { useRoute, useRouter } from "vue-router";
 import { Modal } from "@arco-design/web-vue";
+import { IconLock, IconExclamationCircle } from "@arco-design/web-vue/es/icon";
+import moment from "moment";
+import { ContestControllerService } from "../../../generated";
 
 interface Props {
   id: string;
@@ -98,8 +125,8 @@ const props = withDefaults(defineProps<Props>(), {
 const doCodeChange = (v: string) => {
   if (form.value.code !== v) {
     form.value.code = v;
+    console.log("ViewQuestionView - 代码已更新" + form.value.code);
   }
-  console.log("ViewQuestionView - 编辑器内容变化:", v);
 };
 const question1 = ref<QuestionVO>();
 
@@ -119,14 +146,15 @@ const useStore1 = useStore();
 const route = useRoute();
 const router = useRouter();
 
-// 添加生成代码存储key的函数
+// 修改生成代码存储key的函数
 const getCodeStorageKey = (questionId: string, contestId?: string) => {
+  const userId = store.state.user.loginUser.id;
   if (contestId) {
-    // 如果是比赛题目，使用比赛ID和题目ID的组合
-    return `code_contest_${contestId}_question_${questionId}`;
+    // 比赛模式的代码存储，加入用户ID
+    return `contest_code_${contestId}_question_${questionId}_user_${userId}`;
   }
-  // 普通题目只使用题目ID
-  return `code_question_${questionId}`;
+  // 普通模式的代码存储，加入用户ID
+  return `normal_code_${questionId}_user_${userId}`;
 };
 
 // 添加 codeEditorRef 的声明
@@ -136,16 +164,7 @@ const codeEditorRef = ref(null);
 const doSubmit = async () => {
   if (!form.value.questionId) return;
 
-  // 使用新的key生成方式
-  const codeKey = getCodeStorageKey(props.id, form.value.contestId);
-  const saveData = {
-    code: form.value.code,
-    language: form.value.language,
-    timestamp: new Date().getTime(),
-    questionId: props.id,
-    contestId: form.value.contestId,
-  };
-  localStorage.setItem(codeKey, JSON.stringify(saveData));
+  handleSaveCode();
 
   try {
     const submitData = {
@@ -154,10 +173,18 @@ const doSubmit = async () => {
       questionId: form.value.questionId,
     };
 
-    const res = await QuestionControllerService.doQuestionSubmitUsingPost1(
+    let res = await QuestionControllerService.doQuestionSubmitUsingPost1(
       submitData,
       form.value.contestId as any
     );
+    if (res.code === 50030) {
+      // 在其他地方调用
+      store.dispatch("user/getLoginUser");
+      res = await QuestionControllerService.doQuestionSubmitUsingPost1(
+        submitData,
+        form.value.contestId as any
+      );
+    }
 
     if (res.code === 0) {
       message.success("提交成功");
@@ -165,23 +192,18 @@ const doSubmit = async () => {
       if (token != null && token != "") {
         useStore1.commit("question/updateToken", token);
       }
-
-      // 根据提交结果显示不同消息
-      if (res.data.judgeInfo?.result === "Accepted") {
-        message.success("恭喜你通过了这道题！");
-      }
-
-      // 跳转逻辑
+      // 优化跳转逻辑
       if (form.value.contestId) {
+        // 如果是比赛模式，跳转到比赛详情页的题目标签
         router.push({
-          path: "/question/submitted",
+          path: `/contest/detail/${form.value.contestId}`,
           query: {
+            activeTab: "2", // 使用 "2" 来匹配比赛详情页���题目标签
             questionId: form.value.questionId,
-            contestId: form.value.contestId,
-            returnPath: route.fullPath,
           },
         });
       } else {
+        // 普通模式，跳转到提交记录页
         router.push({
           path: "/question/submitted",
           query: {
@@ -190,8 +212,6 @@ const doSubmit = async () => {
           },
         });
       }
-    } else if (res.code === 50030) {
-      // token过期处理...
     } else {
       message.error("提交失败," + res.message);
     }
@@ -200,13 +220,16 @@ const doSubmit = async () => {
     message.error("提交失败");
   }
 };
-
 const loadData = async () => {
+  // 检查题目是否在比赛中
+  isInContest.value = await checkQuestionInContest();
+
   const res = await QuestionControllerService.getQuestionVoByIdUsingGet1(
     props.id as any
   );
   if (res.code === 0) {
     question1.value = res.data;
+    console.log("answer:" + question1.value?.answer);
   } else {
     if (res.code === 40100) {
       const userInfo = {
@@ -239,10 +262,20 @@ onMounted(() => {
   const savedData = localStorage.getItem(codeKey);
   if (savedData) {
     try {
-      const { code, language } = JSON.parse(savedData);
-      form.value.code = code;
-      form.value.language = language;
-      console.log("已恢复保存的代码");
+      const { code, language, from } = JSON.parse(savedData);
+      // 检查代码来源是否匹配当前模式
+      const currentMode = form.value.contestId ? "contest" : "normal";
+      if (from === currentMode) {
+        form.value.code = code;
+        form.value.language = language;
+        if (codeEditorRef.value) {
+          codeEditorRef.value.updateContent(code);
+        }
+        console.log("currentMode:" + currentMode + " savedData.from:" + from);
+        console.log(
+          `已恢复${currentMode === "contest" ? "比赛" : "普通"}模式的代码`
+        );
+      }
     } catch (error) {
       console.error("恢复代码失败:", error);
     }
@@ -254,17 +287,77 @@ const handleClearCode = () => {
   Modal.confirm({
     title: "确认清空",
     content: "确定要清空当前代码吗？这个操作不可恢复。",
-    onOk: async () => {
+    onOk: () => {
+      const userId = store.state.user.loginUser.id;
+      if (!userId) {
+        message.error("请先登录");
+        return;
+      }
+
       const codeKey = getCodeStorageKey(props.id, form.value.contestId);
       localStorage.removeItem(codeKey);
       form.value.code = "";
-      console.log("ViewQuestionView - 代码已清空");
-      if (store.state.editor.code !== "") {
-        store.commit("editor/updateCode", "xxxxx");
+      if (codeEditorRef.value) {
+        codeEditorRef.value.updateContent("");
       }
-      await useStore1.dispatch("editor/updateCode", "");
+      console.log(`${form.value.contestId ? "比赛" : "普通"}模式的代码已清空`);
     },
   });
+};
+
+// 修改保存代码的处理函数
+const handleSaveCode = () => {
+  const userId = store.state.user.loginUser.id;
+  if (!userId) {
+    message.error("请先登录");
+    return;
+  }
+
+  const codeKey = getCodeStorageKey(props.id, form.value.contestId);
+  const saveData = {
+    code: form.value.code,
+    language: form.value.language,
+    timestamp: new Date().getTime(),
+    questionId: props.id,
+    contestId: form.value.contestId,
+    userId: userId,
+    // 添加来源标记
+    from: form.value.contestId ? "contest" : "normal",
+  };
+  localStorage.setItem(codeKey, JSON.stringify(saveData));
+  message.success(form.value.contestId ? "比赛代码已保存" : "代码已保存");
+};
+
+// 添加比赛时间检查函数
+const isContestOngoing = (contestEndTime?: string) => {
+  if (!contestEndTime) return false;
+  return moment().isBefore(moment(contestEndTime));
+};
+
+// 添加检查题目是否在比赛中的函数
+const checkQuestionInContest = async () => {
+  try {
+    const res =
+      await ContestControllerService.checkQuestionInOngoingContestUsingGet1(
+        props.id as any
+      );
+    if (res.code === 0) {
+      return res.data;
+    }
+    return false;
+  } catch (error) {
+    console.error("检查题目是否在比赛中失败:", error);
+    return false;
+  }
+};
+
+// 添加响应式变量
+const isInContest = ref(false);
+
+// 添加检查答案是否为空的函数
+const isAnswerEmpty = (answer: string | null): boolean => {
+  if (answer === null) return true;
+  return answer.trim() === "";
 };
 </script>
 
@@ -276,5 +369,24 @@ const handleClearCode = () => {
 
 #ViewQuestionView .arco-space-horizontal .arco-space-item {
   margin-bottom: 0 !important;
+}
+
+.answer-locked,
+.answer-empty {
+  padding: 40px;
+  text-align: center;
+  background: #fff;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+:deep(.arco-result) {
+  padding: 48px 32px;
+}
+
+:deep(.arco-result-subtitle) {
+  margin-top: 16px;
+  color: #86909c;
+  font-size: 15px;
 }
 </style>
