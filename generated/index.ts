@@ -14,6 +14,7 @@ export type { AiChatRecordVo } from './models/AiChatRecordVo';
 export type { BaseResponse_boolean_ } from './models/BaseResponse_boolean_';
 export type { BaseResponse_ContestRankDetailVO_ } from './models/BaseResponse_ContestRankDetailVO_';
 export type { BaseResponse_ContestVO_ } from './models/BaseResponse_ContestVO_';
+export type { BaseResponse_List_AdminApplicationVO_ } from './models/BaseResponse_List_AdminApplicationVO_';
 export type { BaseResponse_List_AiChatRecordVo_ } from './models/BaseResponse_List_AiChatRecordVo_';
 export type { BaseResponse_List_ContestProblemStatisticsVO_ } from './models/BaseResponse_List_ContestProblemStatisticsVO_';
 export type { BaseResponse_List_ContestQuestionSubmitVO_ } from './models/BaseResponse_List_ContestQuestionSubmitVO_';

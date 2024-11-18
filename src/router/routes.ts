@@ -156,4 +156,22 @@ export const routes: Array<RouteRecordRaw> = [
       hideInMeta: true,
     },
   },
+  {
+    path: "/admin/apply-list",
+    name: "管理员申请列表",
+    component: () => import("@/views/admin/AdminApplyListView.vue"),
+    meta: {
+      access: ACCESS_ENUM.SUPER_ADMIN,
+    },
+  },
+  {
+    path: "/admin/my-apply-list",
+    name: "我的申请记录",
+    component: () => import("@/views/admin/MyApplyListView.vue"),
+    meta: {
+      access: ACCESS_ENUM.USER,
+      hideInMenu: true,
+      hideInMeta: true,
+    },
+  },
 ];
