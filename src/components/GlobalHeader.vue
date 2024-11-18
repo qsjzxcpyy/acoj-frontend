@@ -209,6 +209,7 @@ import axios from "axios";
 
 const showLoginDialog = ref(false);
 const showRegisterDialog = ref(false);
+
 const size = ref("medium");
 const router = useRouter();
 const store = useStore();
@@ -223,6 +224,18 @@ const valueStyle = {
   fontStyle: "italic",
   // 其他 value 样式...
 } as CSSProperties;
+
+const getUserRole = () => {
+  const userRole = store.state.user.loginUser.userRole;
+  if (userRole === "admin") {
+    return "管理员";
+  } else if (userRole === "user") {
+    return "普通用户";
+  } else if (userRole === "superAdmin") {
+    return "超级管理员";
+  }
+};
+
 const data = [
   {
     label: "用户名",
@@ -233,10 +246,15 @@ const data = [
     value: store.state.user.loginUser.userMailbox,
   },
   {
-    label: "个人简介",
-    value: store.state.user.loginUser.userProfile,
+    label: "用户身份",
+    value: getUserRole(),
   },
+  // {
+  //   label: "个人简介",
+  //   value: store.state.user.loginUser.userProfile,
+  // },
 ];
+
 const visibleRoutes = computed(() => {
   return routes.filter((item, index) => {
     if (item.meta?.hideInMeta) return false;
@@ -341,7 +359,7 @@ const doUserLogin = async () => {
 const updateData = () => {
   data[0].value = store.state.user.loginUser.userName;
   data[1].value = store.state.user.loginUser.userMailbox;
-  data[2].value = store.state.user.loginUser.userProfile;
+  data[2].value = getUserRole();
 };
 const logout = () => {
   const res = {

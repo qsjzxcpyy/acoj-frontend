@@ -71,7 +71,7 @@ export const routes: Array<RouteRecordRaw> = [
     component: () => import("@/views/question/AddQuestionView.vue"),
     meta: {
       keepAlive: true,
-      access: ACCESS_ENUM.ADMIN,
+      access: [ACCESS_ENUM.ADMIN, ACCESS_ENUM.SUPER_ADMIN],
     },
   },
   {
@@ -79,7 +79,7 @@ export const routes: Array<RouteRecordRaw> = [
     name: "修改题目",
     component: () => import("@/views/question/AddQuestionView.vue"),
     meta: {
-      access: ACCESS_ENUM.USER,
+      access: [ACCESS_ENUM.ADMIN, ACCESS_ENUM.SUPER_ADMIN],
       hideInMeta: true,
     },
   },
@@ -88,7 +88,7 @@ export const routes: Array<RouteRecordRaw> = [
     name: "管理题目",
     component: () => import("@/views/question/ManageQuestionView.vue"),
     meta: {
-      access: ACCESS_ENUM.ADMIN,
+      access: [ACCESS_ENUM.ADMIN, ACCESS_ENUM.SUPER_ADMIN],
     },
   },
   {
@@ -112,7 +112,7 @@ export const routes: Array<RouteRecordRaw> = [
     name: "添加比赛",
     component: () => import("@/views/content/AddContestView.vue"),
     meta: {
-      access: ACCESS_ENUM.ADMIN,
+      access: [ACCESS_ENUM.ADMIN, ACCESS_ENUM.SUPER_ADMIN],
       hideInMeta: true,
     },
   },
@@ -134,7 +134,7 @@ export const routes: Array<RouteRecordRaw> = [
     name: "管理比赛",
     component: () => import("@/views/content/ManageContestView.vue"),
     meta: {
-      access: ACCESS_ENUM.ADMIN,
+      access: [ACCESS_ENUM.ADMIN, ACCESS_ENUM.SUPER_ADMIN],
     },
   },
   {

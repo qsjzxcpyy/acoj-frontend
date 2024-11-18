@@ -9,6 +9,7 @@ export default {
       userName: "未登录",
       userProfile: "",
       userMailbox: "",
+      userRole: "",
     },
   }),
   actions: {

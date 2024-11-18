@@ -7,6 +7,9 @@ export { CancelablePromise, CancelError } from './core/CancelablePromise';
 export { OpenAPI } from './core/OpenAPI';
 export type { OpenAPIConfig } from './core/OpenAPI';
 
+export type { AdminApplicationQueryRequest } from './models/AdminApplicationQueryRequest';
+export type { AdminApplicationRequest } from './models/AdminApplicationRequest';
+export type { AdminApplicationVO } from './models/AdminApplicationVO';
 export type { AiChatRecordVo } from './models/AiChatRecordVo';
 export type { BaseResponse_boolean_ } from './models/BaseResponse_boolean_';
 export type { BaseResponse_ContestRankDetailVO_ } from './models/BaseResponse_ContestRankDetailVO_';
@@ -16,6 +19,7 @@ export type { BaseResponse_List_ContestProblemStatisticsVO_ } from './models/Bas
 export type { BaseResponse_List_ContestQuestionSubmitVO_ } from './models/BaseResponse_List_ContestQuestionSubmitVO_';
 export type { BaseResponse_LoginUserVO_ } from './models/BaseResponse_LoginUserVO_';
 export type { BaseResponse_long_ } from './models/BaseResponse_long_';
+export type { BaseResponse_Page_AdminApplicationVO_ } from './models/BaseResponse_Page_AdminApplicationVO_';
 export type { BaseResponse_Page_ContestRankDetailVO_ } from './models/BaseResponse_Page_ContestRankDetailVO_';
 export type { BaseResponse_Page_ContestVO_ } from './models/BaseResponse_Page_ContestVO_';
 export type { BaseResponse_Page_Question_ } from './models/BaseResponse_Page_Question_';
@@ -41,10 +45,12 @@ export type { ContestRankDetailVO } from './models/ContestRankDetailVO';
 export type { ContestUpdateRequest } from './models/ContestUpdateRequest';
 export type { ContestVO } from './models/ContestVO';
 export type { DeleteRequest } from './models/DeleteRequest';
+export type { HandleApplicationRequest } from './models/HandleApplicationRequest';
 export type { JudgeCase } from './models/JudgeCase';
 export type { JudgeConfig } from './models/JudgeConfig';
 export type { JudgeInfo } from './models/JudgeInfo';
 export type { LoginUserVO } from './models/LoginUserVO';
+export type { Page_AdminApplicationVO_ } from './models/Page_AdminApplicationVO_';
 export type { Page_ContestRankDetailVO_ } from './models/Page_ContestRankDetailVO_';
 export type { Page_ContestVO_ } from './models/Page_ContestVO_';
 export type { Page_Question_ } from './models/Page_Question_';
@@ -72,6 +78,7 @@ export type { UserUpdateMyRequest } from './models/UserUpdateMyRequest';
 export type { UserUpdateRequest } from './models/UserUpdateRequest';
 export type { UserVO } from './models/UserVO';
 
+export { AdminControllerService } from './services/AdminControllerService';
 export { ContestControllerService } from './services/ContestControllerService';
 export { QuestionControllerService } from './services/QuestionControllerService';
 export { UserControllerService } from './services/UserControllerService';
