@@ -97,7 +97,7 @@
         <a-tab-pane key="1" title="比赛说明">
           <div class="contest-description">
             <a-typography-paragraph>
-              {{ contestInfo.description }}
+              <MdViewer :value="contestInfo.description || ''" />
             </a-typography-paragraph>
           </div>
         </a-tab-pane>
@@ -301,6 +301,7 @@ import {
   type QuestionSubmitVO,
 } from "../../../generated";
 import store from "@/store";
+import MdViewer from "@/components/MdViewer.vue";
 
 // 添加 Timer 类型定义
 type Timer = ReturnType<typeof setInterval>;
@@ -938,7 +939,7 @@ onMounted(async () => {
 
 .stat-card {
   background: #fff;
-  padding: 24px;
+  padding: 10px;
   border-radius: 12px;
   display: flex;
   align-items: center;
