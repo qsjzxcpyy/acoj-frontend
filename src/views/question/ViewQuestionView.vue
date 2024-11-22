@@ -10,10 +10,10 @@
                 :column="{ xs: 1, md: 2, lg: 3 }"
               >
                 <a-descriptions-item label="时间限制">
-                  {{ question1.judgeConfig.timeLimit ?? 0 }}ms
+                  {{ question1.judgeConfig.timeLimit ?? 0 }}s
                 </a-descriptions-item>
                 <a-descriptions-item label="空间限制限制">
-                  {{ question1.judgeConfig.memoryLimit ?? 0 }}KB
+                  {{ question1.judgeConfig.memoryLimit ?? 0 }}MB
                 </a-descriptions-item>
               </a-descriptions>
               <MdViewer :value="question1.content || ''" />
@@ -52,7 +52,21 @@
                   <template #subtitle>该题目暂未设置答案</template>
                 </a-result>
               </template>
-              <MdViewer v-else :value="question1.answer" />
+              <template v-else>
+                <div class="answer-content">
+                  <div class="answer-box">
+                    <MdViewer :value="question1.answer" />
+                  </div>
+                  <div class="answer-actions">
+                    <a-button type="primary" @click="copyAnswer">
+                      <template #icon>
+                        <icon-copy />
+                      </template>
+                      复制答案
+                    </a-button>
+                  </div>
+                </div>
+              </template>
             </template>
           </a-tab-pane>
         </a-tabs>
@@ -111,7 +125,11 @@ import store from "@/store";
 import { useStore } from "vuex";
 import { useRoute, useRouter } from "vue-router";
 import { Modal } from "@arco-design/web-vue";
-import { IconLock, IconExclamationCircle } from "@arco-design/web-vue/es/icon";
+import {
+  IconLock,
+  IconExclamationCircle,
+  IconCopy,
+} from "@arco-design/web-vue/es/icon";
 import moment from "moment";
 import { ContestControllerService } from "../../../generated";
 
@@ -198,7 +216,7 @@ const doSubmit = async () => {
         router.push({
           path: `/contest/detail/${form.value.contestId}`,
           query: {
-            activeTab: "2", // 使用 "2" 来匹配比赛详情页���题目标签
+            activeTab: "2", // 使用 "2" 来匹配比赛详情页题目标签
             questionId: form.value.questionId,
           },
         });
@@ -359,6 +377,68 @@ const isAnswerEmpty = (answer: string | null): boolean => {
   if (answer === null) return true;
   return answer.trim() === "";
 };
+
+// 修改复制答案的方法
+const copyAnswer = async () => {
+  if (!question1.value?.answer) {
+    message.error("无法复制答案");
+    return;
+  }
+
+  try {
+    // 处理答案文本，去掉首尾的代码标记
+    let answerText = question1.value.answer;
+    const lines = answerText.split("\n");
+
+    // 检查并移除首尾的代码标记
+    if (
+      lines[0].startsWith("```") &&
+      lines[lines.length - 1].startsWith("```")
+    ) {
+      // 移除第一行和最后一行
+      lines.shift(); // 移除第一行
+      lines.pop(); // 移除最后一行
+      answerText = lines.join("\n");
+    }
+
+    // 创建临时文本区域
+    const textArea = document.createElement("textarea");
+    textArea.value = answerText;
+    document.body.appendChild(textArea);
+
+    // 选择文本
+    textArea.select();
+    textArea.setSelectionRange(0, textArea.value.length);
+
+    // 尝试复制
+    let success = false;
+    try {
+      // 首先尝试使用现代 API
+      await navigator.clipboard.writeText(answerText);
+      success = true;
+    } catch {
+      // 如果 clipboard API 失败，尝试使用 document.execCommand
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("execCommand 复制失败:", err);
+      }
+    }
+
+    // 移除临时元素
+    document.body.removeChild(textArea);
+
+    // 根据复制结果显示提示
+    if (success) {
+      message.success("答案已复制到剪贴板");
+    } else {
+      message.error("复制失败，请手动复制");
+    }
+  } catch (err) {
+    console.error("复制失败:", err);
+    message.error("复制失败，请手动复制");
+  }
+};
 </script>
 
 <style>
@@ -388,5 +468,31 @@ const isAnswerEmpty = (answer: string | null): boolean => {
   margin-top: 16px;
   color: #86909c;
   font-size: 15px;
+}
+
+.answer-content {
+  position: relative;
+}
+
+.answer-box {
+  margin-top: 16px;
+  padding: 16px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.answer-box :deep(.markdown-body) {
+  background-color: transparent;
+}
+
+.answer-box :deep(.markdown-body pre) {
+  background-color: #e8e8e8;
+}
+
+.answer-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-start;
 }
 </style>

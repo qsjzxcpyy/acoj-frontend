@@ -39,7 +39,7 @@
         {{ record.userVO?.userName || "未知用户" }}
       </template>
       <template #judgeInfo="{ record }">
-        {{ record.judgeInfo?.message || "未知状态" }}
+        {{ record.judgeInfo?.message || "正在评测" }}
       </template>
       <template #timeAndSpace="{ record }">
         {{ record.judgeInfo?.time || 0 }} ms /

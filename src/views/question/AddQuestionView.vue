@@ -15,31 +15,28 @@
       <a-form-item label="题目限制" :content-flex="false" :merge-props="false">
         <a-space direction="vertical" style="min-width: 480px">
           <a-form-item field="judgeConfig.memoryLimit" label="内存限制">
-            <a-input-number
-              v-model="form.judgeConfig.memoryLimit"
-              placeholder="请输入内存限制"
-              mode="button"
-              min="0"
-              size="large"
-            />
+            <div class="input-with-unit">
+              <a-input-number
+                v-model="form.judgeConfig.memoryLimit"
+                placeholder="请输入内存限制"
+                mode="button"
+                min="0"
+                size="large"
+              />
+              <span class="unit">MB</span>
+            </div>
           </a-form-item>
           <a-form-item field="judgeConfig.timeLimit" label="时间限制">
-            <a-input-number
-              v-model="form.judgeConfig.timeLimit"
-              placeholder="请输入时间限制"
-              mode="button"
-              min="0"
-              size="large"
-            />
-          </a-form-item>
-          <a-form-item field="judgeConfig.stackLimit" label="堆栈限制">
-            <a-input-number
-              v-model="form.judgeConfig.stackLimit"
-              placeholder="请输入堆栈限制"
-              mode="button"
-              size="large"
-              min="0"
-            />
+            <div class="input-with-unit">
+              <a-input-number
+                v-model="form.judgeConfig.timeLimit"
+                placeholder="请输入时间限制"
+                mode="button"
+                min="0"
+                size="large"
+              />
+              <span class="unit">秒</span>
+            </div>
           </a-form-item>
         </a-space>
       </a-form-item>
@@ -121,7 +118,6 @@ const form = ref({
   content: "",
   judgeConfig: {
     memoryLimit: 0,
-    stackLimit: 0,
     timeLimit: 0,
   },
   judgeCase: [
@@ -137,27 +133,39 @@ const form = ref({
 const updatePage = computed(() => route.path.includes("update"));
 
 const doSubmit = async () => {
-  if (!form.value.title) {
-    message.error("请输入标题");
-    return;
-  }
-  if (!form.value.content) {
-    message.error("请输入题目内容");
-    return;
-  }
-  try {
-    const res = await QuestionControllerService.addQuestionUsingPost1(
-      form.value as any
+  if (updatePage.value) {
+    const res = await QuestionControllerService.updateQuestionUsingPost1(
+      form.value
     );
     if (res.code === 0) {
-      message.success("创建成功");
-      // 跳转到管理题目页面
+      message.success("更新成功");
       router.push("/manage/question");
     } else {
-      message.error("创建失败," + res.message);
+      message.error("更新失败," + res.message);
     }
-  } catch (error) {
-    message.error("创建失败");
+  } else {
+    if (!form.value.title) {
+      message.error("请输入标题");
+      return;
+    }
+    if (!form.value.content) {
+      message.error("请输入题目内容");
+      return;
+    }
+    try {
+      const res = await QuestionControllerService.addQuestionUsingPost1(
+        form.value as any
+      );
+      if (res.code === 0) {
+        message.success("创建成功");
+        // 跳转到管理题目页面
+        router.push("/manage/question");
+      } else {
+        message.error("创建失败," + res.message);
+      }
+    } catch (error) {
+      message.error("创建失败");
+    }
   }
 };
 
@@ -185,9 +193,8 @@ const resetForm = () => {
     title: "",
     content: "",
     judgeConfig: {
-      memoryLimit: 0,
-      stackLimit: 0,
-      timeLimit: 0,
+      memoryLimit: 256,
+      timeLimit: 1,
     },
     judgeCase: [
       {
@@ -216,9 +223,8 @@ const loadData = async () => {
       }
       if (!form.value.judgeConfig) {
         form.value.judgeConfig = {
-          memoryLimit: 1000,
-          stackLimit: 1000,
-          timeLimit: 1000,
+          memoryLimit: 256,
+          timeLimit: 1,
         };
       } else {
         form.value.judgeConfig = JSON.parse(form.value.judgeConfig as any);
@@ -255,6 +261,20 @@ watch(route, () => {
 
 <style scoped>
 #addQuestionView {
-  /* 样式 */
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.unit {
+  color: #86909c;
+  font-size: 14px;
+  padding: 0 4px;
 }
 </style>

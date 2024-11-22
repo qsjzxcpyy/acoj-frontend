@@ -20,8 +20,8 @@
           <template #icon>
             <icon-lock style="font-size: 48px; color: #ff7d00" />
           </template>
-          <template #title> 比赛期间无法查看他人代码 </template>
-          <template #subtitle> 代码将在比赛结束后开放查看 </template>
+          <template #title> 比赛期间无法查看他人代码</template>
+          <template #subtitle> 代码将在比赛结束后开放查看</template>
         </a-result>
       </div>
     </template>
@@ -93,16 +93,49 @@ onMounted(async () => {
   }
 });
 
-// 添加复制代码的方法
+// 修改复制代码的方法
 const copyCode = async () => {
   if (!code.value) {
     Message.error("无法复制代码");
     return;
   }
+
   try {
-    await navigator.clipboard.writeText(code.value);
-    Message.success("代码已复制到剪贴板");
+    // 创建临时文本区域
+    const textArea = document.createElement("textarea");
+    textArea.value = code.value;
+    document.body.appendChild(textArea);
+
+    // 选择文本
+    textArea.select();
+    textArea.setSelectionRange(0, textArea.value.length);
+
+    // 尝试复制
+    let success = false;
+    try {
+      // 首先尝试使用现代 API
+      await navigator.clipboard.writeText(code.value);
+      success = true;
+    } catch {
+      // 如果 clipboard API 失败，尝试使用 document.execCommand
+      try {
+        success = document.execCommand("copy");
+      } catch (err) {
+        console.error("execCommand 复制失败:", err);
+      }
+    }
+
+    // 移除临时元素
+    document.body.removeChild(textArea);
+
+    // 根据复制结果显示提示
+    if (success) {
+      Message.success("代码已复制到剪贴板");
+    } else {
+      Message.error("复制失败，请手动复制");
+    }
   } catch (err) {
+    console.error("复制失败:", err);
     Message.error("复制失败，请手动复制");
   }
 };
