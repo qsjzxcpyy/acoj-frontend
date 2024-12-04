@@ -170,12 +170,6 @@ const columns = [
     dataIndex: "participantCount",
   },
   {
-    title: "创建时间",
-    dataIndex: "createTime",
-    render: ({ record }: { record: ContestVO }) =>
-      moment(record.createTime).format("YYYY-MM-DD HH:mm"),
-  },
-  {
     title: "操作",
     slotName: "optional",
     width: 200,
