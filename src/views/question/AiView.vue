@@ -19,7 +19,14 @@
                   </span>
                 </div>
               </template>
-              <template #description>{{ item.text }}</template>
+              <template #description>
+                <div
+                  v-if="item.sender === '齐小艾'"
+                  v-html="renderMarkdown(item.text)"
+                  class="markdown-content"
+                ></div>
+                <div v-else>{{ item.text }}</div>
+              </template>
             </a-list-item-meta>
           </a-list-item>
         </template>
@@ -59,6 +66,8 @@ import message from "@arco-design/web-vue/es/message";
 import moment from "moment";
 import { QuestionControllerService } from "../../../generated";
 import store from "@/store";
+import { marked } from "marked";
+import DOMPurify from "dompurify";
 
 // 存储聊天记录
 const messages = ref<Array<{ sender: string; text: string; time?: string }>>(
@@ -70,6 +79,12 @@ const newMessage = ref<string>("");
 
 // AI 响应状态
 const isWaitingForAI = ref(false);
+
+// 渲染Markdown内容的函数
+const renderMarkdown = (text: string): string => {
+  // 使用marked将markdown转为HTML，并用DOMPurify清理以防XSS攻击
+  return DOMPurify.sanitize(marked(text));
+};
 
 // 发送消息方法
 const sendMessage = async () => {
@@ -278,5 +293,88 @@ onMounted(async () => {
   100% {
     opacity: 0;
   }
+}
+
+.markdown-content {
+  width: 100%;
+}
+
+.markdown-content :deep(pre) {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+}
+
+.markdown-content :deep(code) {
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  background-color: rgba(175, 184, 193, 0.2);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 85%;
+}
+
+.markdown-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+.markdown-content :deep(h1),
+.markdown-content :deep(h2),
+.markdown-content :deep(h3),
+.markdown-content :deep(h4),
+.markdown-content :deep(h5),
+.markdown-content :deep(h6) {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-content :deep(a) {
+  color: #0969da;
+  text-decoration: none;
+}
+
+.markdown-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.markdown-content :deep(blockquote) {
+  margin: 0;
+  padding: 0 1em;
+  color: #57606a;
+  border-left: 0.25em solid #d0d7de;
+}
+
+.markdown-content :deep(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+.markdown-content :deep(table th),
+.markdown-content :deep(table td) {
+  padding: 6px 13px;
+  border: 1px solid #d0d7de;
+}
+
+.markdown-content :deep(table tr) {
+  background-color: #ffffff;
+  border-top: 1px solid #d0d7de;
+}
+
+.markdown-content :deep(table tr:nth-child(2n)) {
+  background-color: #f6f8fa;
+}
+
+.markdown-content :deep(img) {
+  max-width: 100%;
+  box-sizing: content-box;
+}
+
+.markdown-content :deep(ul),
+.markdown-content :deep(ol) {
+  padding-left: 2em;
 }
 </style>
